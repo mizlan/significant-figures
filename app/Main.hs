@@ -156,6 +156,8 @@ evalPrec1 xs =
     roundDP minDP s
       | minDP > 0 = BD.roundBD s $ BD.halfUp minDP
       | otherwise =
+      -- workaround to use BigDecimal's rounding features on decimal places to
+      -- the left of the decimal place
         let s' = BD.BigDecimal (BD.getValue s) (BD.getScale s - minDP)
          in BD.roundBD s' (BD.halfUp 0) * 10 ^ (-minDP)
 
