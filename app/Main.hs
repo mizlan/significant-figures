@@ -124,7 +124,7 @@ prec2Chain = do term <- btwnParens prec1Chain <|> leaf; spaces; rest [(Mul, term
       do
         op <- oneOf "*/"
         spaces
-        term' <- prec2Chain
+        term' <- btwnParens prec1Chain <|> leaf
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec2 (reverse terms))
