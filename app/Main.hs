@@ -180,7 +180,7 @@ evaluate (SFPrec2 xs) = case xs of
      in forceSF minSF s
     where
       doOp Mul a b = a * b
-      doOp Div a b = BD.divide (a, b) (BD.PRECISE, Nothing)
+      doOp Div a b = BD.divide (a, b) (BD.HALF_UP, Nothing)
       doOp _ a b = error "should not happen"
       forceSF sf' bd =
         let bd' = BD.nf bd
