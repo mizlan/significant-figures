@@ -128,6 +128,10 @@ prec2Chain = do term <- btwnParens prec1Chain <|> leaf; spaces; rest [(Mul, term
 btwnParens :: Parses a -> Parses a
 btwnParens = between (char '(') (char ')')
 
+-- TODO make 
+-- evaluateTree :: SFTree -> SFTerm
+--  that matches on SFLeaf etc
+
 -- The below is not pretty
 --
 -- 123128318526389823467529874356923 14
