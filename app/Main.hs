@@ -8,7 +8,8 @@ import qualified Data.BigDecimal as BD
 import Data.List
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Read as T
+import qualified Data.Text.Read as T
+import qualified Data.Text.IO as T
 import Data.Tuple.Extra (second)
 import Debug.Trace
 import Text.Parsec
@@ -18,6 +19,9 @@ type Parses = Parsec Text ()
 
 data SFTerm = SFTerm {numSigFigs :: Integer, value :: BigDecimal}
   deriving (Show)
+
+niceShow :: SFTerm -> Text
+niceShow (SFTerm sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " sig. figs.)"
 
 data Sign = Positive | Negative
   deriving (Show)
@@ -193,6 +197,6 @@ evaluate (SFPrec2 xs) = case xs of
 -- not accounted for: -.7
 
 main :: IO ()
-main = print $ case parse prec1Chain "" "4.0e2 + 20." of
-  Right (SFPrec1 m) -> show $ evalPrec1 m
+main = T.putStrLn $ case parse prec2Chain "" "(3.5 + 2.0) * 2.0" of
+  Right m -> niceShow $ evaluate m
   _ -> "fail"
