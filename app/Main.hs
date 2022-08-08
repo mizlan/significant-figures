@@ -132,9 +132,12 @@ prec2Chain = do term <- btwnParens prec1Chain <|> leaf; spaces; rest [(Mul, term
 btwnParens :: Parses a -> Parses a
 btwnParens = between (char '(') (char ')')
 
--- TODO make 
--- evaluateTree :: SFTree -> SFTerm
---  that matches on SFLeaf etc
+-- positive integer means to the right of decimal place, negative means to the left
+roundToPlace :: BigDecimal -> Integer -> BigDecimal
+roundToPlace bd@(BD.BigDecimal v s) dp
+ | dp > 0 = BD.roundBD bd $ BD.halfUp dp
+ | otherwise = let bd' = BD.BigDecimal v (s - dp)
+                in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (-dp)
 
 -- The below is not pretty
 --
@@ -143,36 +146,44 @@ btwnParens = between (char '(') (char ')')
 --           ┗━━━━d━━━━━━━━━━━━━━━━┛
 -- ┗━━━━s━━━━━━━━━━━━━━━━┛
 --           ┗━━━━!━━━━━━┛ take minimum
-evalPrec1 :: [(Op, SFTree)] -> SFTerm
-evalPrec1 [] = error "should not happen"
-evalPrec1 [(_, SFLeaf a)] = a
-evalPrec1 xs =
-  let evaledSubs = map (second (evalPrec2 . children)) xs
-      s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 0 evaledSubs
-      minDP = traceShowId (minimum . map (significantDecPlaces . snd) $ evaledSubs)
-      res = BD.nf $ roundDP minDP s
-   in SFTerm (BD.precision res - BD.getScale res + minDP) res
-  where
-    significantDecPlaces (SFTerm sf v) =
-      let v' = BD.nf v
-          dec = BD.getScale v'
-          nd = BD.precision v'
-       in sf + dec - nd
-    doOp Add a b = a + b
-    doOp Sub a b = a - b
-    doOp _ a b = error "should not happen"
-    roundDP minDP s
-      | minDP > 0 = BD.roundBD s $ BD.halfUp minDP
-      | otherwise =
-      -- workaround to use BigDecimal's rounding features on decimal places to
-      -- the left of the decimal place
-        let s' = BD.BigDecimal (BD.getValue s) (BD.getScale s - minDP)
-         in BD.roundBD s' (BD.halfUp 0) * 10 ^ (-minDP)
-
-evalPrec2 :: [(Op, SFTree)] -> SFTerm
-evalPrec2 [] = error "should not happen"
-evalPrec2 [(_, SFLeaf a)] = a
-evalPrec2 _ = undefined
+evaluate :: SFTree -> SFTerm
+evaluate (SFLeaf a) = a
+evaluate (SFPrec1 xs) = case xs of
+  [] -> error "should not happen"
+  [(_, SFLeaf a)] -> a
+  xs ->
+    let evaledSubs = map (second evaluate) xs
+        s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 0 evaledSubs
+        minDP = minimum . map (significantDecPlaces . snd) $ evaledSubs
+        res = BD.nf $ roundToPlace s minDP
+     in SFTerm (BD.precision res - BD.getScale res + minDP) res
+    where
+      significantDecPlaces (SFTerm sf v) =
+        let v' = BD.nf v
+            dec = BD.getScale v'
+            nd = BD.precision v'
+         in sf + dec - nd
+      doOp Add a b = a + b
+      doOp Sub a b = a - b
+      doOp _ a b = error "should not happen"
+evaluate (SFPrec2 xs) = case xs of
+  [] -> error "should not happen"
+  [(_, SFLeaf a)] -> a
+  xs ->
+    let evaledSubs = map (second evaluate) xs
+        s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 1 evaledSubs
+        minSF = minimum . map (numSigFigs . snd) $ evaledSubs
+     in forceSF minSF s
+    where
+      doOp Mul a b = a * b
+      doOp Div a b = BD.divide (a, b) (BD.PRECISE, Nothing)
+      doOp _ a b = error "should not happen"
+      forceSF sf' bd =
+        let bd' = BD.nf bd
+            dec = BD.getScale bd'
+            nd = BD.precision bd'
+            delta = sf' + dec - nd
+         in SFTerm sf' (roundToPlace bd' delta)
 
 -- can be
 -- 2.5e7
