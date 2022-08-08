@@ -7,12 +7,12 @@ import Data.BigDecimal (BigDecimal)
 import qualified Data.BigDecimal as BD
 import Data.List
 import Data.Text (Text)
-import Data.Tuple.Extra (second)
 import qualified Data.Text as T
 import Data.Text.Read as T
+import Data.Tuple.Extra (second)
+import Debug.Trace
 import Text.Parsec
 import Text.Parsec.Char
-import Debug.Trace
 
 type Parses = Parsec Text ()
 
@@ -128,16 +128,13 @@ prec2Chain = do term <- btwnParens prec1Chain <|> leaf; spaces; rest [(Mul, term
 btwnParens :: Parses a -> Parses a
 btwnParens = between (char '(') (char ')')
 
+-- The below is not pretty
 --
 -- 123128318526389823467529874356923 14
 -- ┗━━━━n━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 --           ┗━━━━d━━━━━━━━━━━━━━━━┛
 -- ┗━━━━s━━━━━━━━━━━━━━━━┛
 --           ┗━━━━!━━━━━━┛ take minimum
---
--- 422 0
--- -> 400
--- 4.22
 evalPrec1 :: [(Op, SFTree)] -> SFTerm
 evalPrec1 [] = error "should not happen"
 evalPrec1 [(_, SFLeaf a)] = a
@@ -145,20 +142,22 @@ evalPrec1 xs =
   let evaledSubs = map (second (evalPrec2 . children)) xs
       s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 0 evaledSubs
       minDP = traceShowId (minimum . map (significantDecPlaces . snd) $ evaledSubs)
-      res = roundDP minDP s
-  in SFTerm (BD.precision res - BD.getScale res) res
-    where
-      significantDecPlaces (SFTerm sf v) =
-        let v' = BD.nf v
-            dec = BD.getScale v'
-            nd = BD.precision v'
-        in sf + dec - nd
-      doOp Add a b = a + b
-      doOp Sub a b = a - b
-      doOp _ a b = error "should not happen"
-      roundDP minDP s
-       | minDP > 0 = BD.roundBD s $ BD.halfUp minDP
-       | otherwise = true
+      res = BD.nf $ roundDP minDP s
+   in SFTerm (BD.precision res - BD.getScale res + minDP) res
+  where
+    significantDecPlaces (SFTerm sf v) =
+      let v' = BD.nf v
+          dec = BD.getScale v'
+          nd = BD.precision v'
+       in sf + dec - nd
+    doOp Add a b = a + b
+    doOp Sub a b = a - b
+    doOp _ a b = error "should not happen"
+    roundDP minDP s
+      | minDP > 0 = BD.roundBD s $ BD.halfUp minDP
+      | otherwise =
+        let s' = BD.BigDecimal (BD.getValue s) (BD.getScale s - minDP)
+         in BD.roundBD s' (BD.halfUp 0) * 10 ^ (-minDP)
 
 evalPrec2 :: [(Op, SFTree)] -> SFTerm
 evalPrec2 [] = error "should not happen"
@@ -173,6 +172,6 @@ evalPrec2 _ = undefined
 -- not accounted for: -.7
 
 main :: IO ()
-main = print $ case parse prec1Chain "" "-.7 + 4.2e4" of
-                 Right (SFPrec1 m) -> show $ evalPrec1 m
-                 _ -> "fail"
+main = print $ case parse prec1Chain "" "4.0e2 + 20." of
+  Right (SFPrec1 m) -> show $ evalPrec1 m
+  _ -> "fail"
