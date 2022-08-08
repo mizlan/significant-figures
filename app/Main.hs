@@ -8,8 +8,8 @@ import qualified Data.BigDecimal as BD
 import Data.List
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Read as T
 import qualified Data.Text.IO as T
+import qualified Data.Text.Read as T
 import Data.Tuple.Extra (second)
 import Debug.Trace
 import Text.Parsec
@@ -95,53 +95,85 @@ floatLike = do
 
 sciNotationLike :: Parses SFTerm
 sciNotationLike = do
-  SFTerm sf coef@(BD.BigDecimal coefValue coefScale) <- try floatLike <|> integerLike
+  SFTerm sf coef@(BD.BigDecimal coefValue coefScale) <- try floatLike <|> try integerLike
   char 'e'
   SFTerm _ (BD.BigDecimal exp _) <- integerLike
   return $ SFTerm sf $ BD.nf $ coef * 10 ^^ exp
 
 leaf :: Parses SFTree
 leaf = do
-  l <- try sciNotationLike <|> try floatLike <|> try integerLike
+  l <- parserTraced "leaf" $ try sciNotationLike <|> try floatLike <|> try integerLike
   return $ SFLeaf l
+
+expr :: Parses SFTree
+expr =
+  try (parserTraced "expr: p2" prec2Chain)
+    <|> try (parserTraced "expr: p1" prec1Chain)
+    <|> try (parserTraced "expr: lf" leaf)
+    <|> try (parserTraced "expr: ()" (btwnParens expr))
+
+fullExpr :: Parses SFTree
+fullExpr =
+  choice $
+    try . (<* eof)
+      <$> [ parserTraced "full: ()" (btwnParens expr),
+            parserTraced "full: p2" prec2Chain,
+            parserTraced "full: p1" prec1Chain,
+            parserTraced "full: lf" leaf
+          ]
 
 -- addition and subtraction. chains are necessary because sigfig-simplification
 -- only occurs on completion of evaluation of such a chain
 prec1Chain :: Parses SFTree
-prec1Chain = do term <- prec2Chain; spaces; rest [(Add, term)]
+prec1Chain =
+  do
+    term <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
+    spaces
+    op <- oneOf "+-"
+    spaces
+    term' <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
+    spaces
+    rest [(toOp op, term'), (Add, term)]
   where
-    rest :: [(Op, SFTree)] -> Parses SFTree
     rest terms =
       do
         op <- oneOf "+-"
         spaces
-        term' <- prec2Chain
+        term' <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec1 (reverse terms))
 
 prec2Chain :: Parses SFTree
-prec2Chain = do term <- btwnParens prec1Chain <|> leaf; spaces; rest [(Mul, term)]
+prec2Chain =
+  do
+    term <- try (btwnParens expr) <|> try leaf
+    spaces
+    op <- oneOf "*/"
+    spaces
+    term' <- try (btwnParens expr) <|> try leaf
+    spaces
+    rest [(toOp op, term'), (Mul, term)]
   where
-    rest :: [(Op, SFTree)] -> Parses SFTree
     rest terms =
       do
         op <- oneOf "*/"
-        spaces
-        term' <- btwnParens prec1Chain <|> leaf
+        try spaces
+        term' <- try (btwnParens expr) <|> try leaf
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec2 (reverse terms))
 
 btwnParens :: Parses a -> Parses a
-btwnParens = between (char '(') (char ')')
+btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
 
 -- positive integer means to the right of decimal place, negative means to the left
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BD.BigDecimal v s) dp
- | dp > 0 = BD.roundBD bd $ BD.halfUp dp
- | otherwise = let bd' = BD.BigDecimal v (s - dp)
-                in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (-dp)
+  | dp > 0 = BD.roundBD bd $ BD.halfUp dp
+  | otherwise =
+    let bd' = BD.BigDecimal v (s - dp)
+     in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
 
 -- The below is not pretty
 --
@@ -197,6 +229,6 @@ evaluate (SFPrec2 xs) = case xs of
 -- not accounted for: -.7
 
 main :: IO ()
-main = T.putStrLn $ case parse prec2Chain "" "(3.5 + 2.0) * 2.0" of
-  Right m -> niceShow $ evaluate m
-  _ -> "fail"
+main = T.putStrLn $ case parse fullExpr "" "((3)+2) + 2" of
+  Right m -> T.pack $ show m
+  Left n -> T.pack $ show n
