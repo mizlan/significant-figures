@@ -64,10 +64,14 @@ digits = T.pack <$> many1 digit
 
 -- number of sig figs for a non-negative integer if it was typed as text
 numSigFigsNNIntTextual :: Text -> Integer
-numSigFigsNNIntTextual = toInteger . T.length . T.dropAround (== '0')
+numSigFigsNNIntTextual t =
+  let residue = T.dropAround (== '0') t
+   in toInteger $ if T.null residue then 1 else T.length residue
 
 numSigFigsNNFltTextual :: Text -> Integer
-numSigFigsNNFltTextual = toInteger . T.length . T.dropWhile (== '0') . T.filter (/= '.')
+numSigFigsNNFltTextual t =
+  let residue = T.dropWhile (== '0') . T.filter (/= '.') $ t
+   in toInteger $ if T.null residue then T.count "0" t else T.length residue
 
 integerLike :: Parses SFTerm
 integerLike = do
