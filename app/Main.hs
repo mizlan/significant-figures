@@ -21,7 +21,7 @@ data SFTerm = SFTerm {numSigFigs :: Integer, value :: BigDecimal}
   deriving (Show)
 
 niceShow :: SFTerm -> Text
-niceShow (SFTerm sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " sig. figs.)"
+niceShow (SFTerm sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " s.f.)"
 
 data Sign = Positive | Negative
   deriving (Show)
