@@ -179,7 +179,7 @@ roundToPlace bd@(BD.BigDecimal v s) dp
 evaluate :: SFTree -> SFTerm
 evaluate t = case t of
   (SFLeaf a) -> a
-  (SFPrec1 xs) -> case xs of 
+  (SFPrec1 xs) -> case xs of
     [] -> error "should not happen"
     [(_, SFLeaf a)] -> a
     xs ->
