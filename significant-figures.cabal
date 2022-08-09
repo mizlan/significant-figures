@@ -34,5 +34,6 @@ executable significant-figures
                      ,parsec
                      ,HasBigDecimal
                      ,extra
+                     ,haskeline
     hs-source-dirs:   app
     default-language: Haskell2010

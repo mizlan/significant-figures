@@ -14,6 +14,7 @@ import Data.Tuple.Extra (second)
 import Debug.Trace
 import Text.Parsec
 import Text.Parsec.Char
+import System.Console.Haskeline
 
 type Parses = Parsec Text ()
 
@@ -219,6 +220,19 @@ evaluate t = case t of
       in SFTerm sf' (roundToPlace bd' delta)
 
 main :: IO ()
-main = T.putStrLn $ case parse fullExpr "" "((-.80e+1 / -.1999999999))" of
-  Right m -> niceShow $ evaluate m
-  Left n -> T.pack $ show n
+-- main = forever $ T.putStrLn $ case parse fullExpr "" "((-.80e+1 / -.1999999999))" of
+--   Right m -> niceShow $ evaluate m
+--   Left n -> T.pack $ show n
+
+main = runInputT defaultSettings loop
+  where
+    loop :: InputT IO ()
+    loop = do
+      inp <- getInputLine "expr> "
+      case inp of
+        Nothing -> return ()
+        Just expr -> do
+          outputStrLn . T.unpack $ case parse fullExpr "" (T.pack expr) of
+            Right m -> niceShow $ evaluate m
+            Left n -> "Error: " <> T.pack (show n)
+          loop
