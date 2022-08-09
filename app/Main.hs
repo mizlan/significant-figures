@@ -102,24 +102,24 @@ sciNotationLike = do
 
 leaf :: Parses SFTree
 leaf = do
-  l <- parserTraced "leaf" $ try sciNotationLike <|> try floatLike <|> try integerLike
+  l <- try sciNotationLike <|> try floatLike <|> try integerLike
   return $ SFLeaf l
 
 expr :: Parses SFTree
 expr =
-  try (parserTraced "expr: p2" prec2Chain)
-    <|> try (parserTraced "expr: p1" prec1Chain)
-    <|> try (parserTraced "expr: lf" leaf)
-    <|> try (parserTraced "expr: ()" (btwnParens expr))
+  try prec2Chain
+    <|> try prec1Chain
+    <|> try leaf
+    <|> try (btwnParens expr)
 
 fullExpr :: Parses SFTree
 fullExpr =
   choice $
     try . (<* eof)
-      <$> [ parserTraced "full: ()" (btwnParens expr),
-            parserTraced "full: p2" prec2Chain,
-            parserTraced "full: p1" prec1Chain,
-            parserTraced "full: lf" leaf
+      <$> [ btwnParens expr,
+            prec2Chain,
+            prec1Chain,
+            leaf
           ]
 
 -- addition and subtraction. chains are necessary because sigfig-simplification
@@ -127,11 +127,11 @@ fullExpr =
 prec1Chain :: Parses SFTree
 prec1Chain =
   do
-    term <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
+    term <- try (btwnParens expr) <|> try prec2Chain <|> leaf
     spaces
     op <- oneOf "+-"
     spaces
-    term' <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
+    term' <- try (btwnParens expr) <|> try prec2Chain <|> leaf
     spaces
     rest [(toOp op, term'), (Add, term)]
   where
@@ -139,7 +139,7 @@ prec1Chain =
       do
         op <- oneOf "+-"
         spaces
-        term' <- try (btwnParens expr) <|> try prec2Chain <|> try leaf
+        term' <- try (btwnParens expr) <|> try prec2Chain <|> leaf
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec1 (reverse terms))
@@ -147,19 +147,19 @@ prec1Chain =
 prec2Chain :: Parses SFTree
 prec2Chain =
   do
-    term <- try (btwnParens expr) <|> try leaf
+    term <- try (btwnParens expr) <|> leaf
     spaces
     op <- oneOf "*/"
     spaces
-    term' <- try (btwnParens expr) <|> try leaf
+    term' <- try (btwnParens expr) <|> leaf
     spaces
     rest [(toOp op, term'), (Mul, term)]
   where
     rest terms =
       do
         op <- oneOf "*/"
-        try spaces
-        term' <- try (btwnParens expr) <|> try leaf
+        spaces
+        term' <- try (btwnParens expr) <|> leaf
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec2 (reverse terms))
@@ -175,60 +175,50 @@ roundToPlace bd@(BD.BigDecimal v s) dp
     let bd' = BD.BigDecimal v (s - dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
 
--- The below is not pretty
---
--- 123128318526389823467529874356923 14
--- ┗━━━━n━━━━━━━━━━━━━━━━━━━━━━━━━━┛
---           ┗━━━━d━━━━━━━━━━━━━━━━┛
--- ┗━━━━s━━━━━━━━━━━━━━━━┛
---           ┗━━━━!━━━━━━┛ take minimum
 evaluate :: SFTree -> SFTerm
-evaluate (SFLeaf a) = a
-evaluate (SFPrec1 xs) = case xs of
-  [] -> error "should not happen"
-  [(_, SFLeaf a)] -> a
-  xs ->
-    let evaledSubs = map (second evaluate) xs
-        s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 0 evaledSubs
-        minDP = minimum . map (significantDecPlaces . snd) $ evaledSubs
-        res = BD.nf $ roundToPlace s minDP
-     in SFTerm (BD.precision res - BD.getScale res + minDP) res
-    where
-      significantDecPlaces (SFTerm sf v) =
-        let v' = BD.nf v
-            dec = BD.getScale v'
-            nd = BD.precision v'
-         in sf + dec - nd
-      doOp Add a b = a + b
-      doOp Sub a b = a - b
-      doOp _ a b = error "should not happen"
-evaluate (SFPrec2 xs) = case xs of
-  [] -> error "should not happen"
-  [(_, SFLeaf a)] -> a
-  xs ->
-    let evaledSubs = map (second evaluate) xs
-        s = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) 1 evaledSubs
-        minSF = minimum . map (numSigFigs . snd) $ evaledSubs
-     in forceSF minSF s
-    where
-      doOp Mul a b = a * b
-      doOp Div a b = BD.divide (a, b) (BD.HALF_UP, Nothing)
-      doOp _ a b = error "should not happen"
-      forceSF sf' bd =
-        let bd' = BD.nf bd
-            dec = BD.getScale bd'
-            nd = BD.precision bd'
-            delta = sf' + dec - nd
-         in SFTerm sf' (roundToPlace bd' delta)
-
--- can be
--- 2.5e7
--- 400e+25
--- -2.e-4
--- 0000.003
--- not accounted for: -.7
+evaluate t = case t of
+  (SFLeaf a) -> a
+  (SFPrec1 xs) -> case xs of 
+    [] -> error "should not happen"
+    [(_, SFLeaf a)] -> a
+    xs ->
+      let evaledSubs = evaluateSubtrees xs
+          s = computeUnconstrained evaledSubs prec1Id
+          minDP = minimum . map (significantDecPlaces . snd) $ evaledSubs
+          res = BD.nf $ roundToPlace s minDP
+       in SFTerm (BD.precision res - BD.getScale res + minDP) res
+  (SFPrec2 xs) -> case xs of
+    [] -> error "should not happen"
+    [(_, SFLeaf a)] -> a
+    xs ->
+      let evaledSubs = evaluateSubtrees xs
+          s = computeUnconstrained evaledSubs prec2Id
+          minSF = minimum . map (numSigFigs . snd) $ evaledSubs
+       in forceSF minSF s
+ where
+   evaluateSubtrees = map (second evaluate)
+   prec1Id = 0
+   prec2Id = 1
+   doOp Add a b = a + b
+   doOp Sub a b = a - b
+   doOp Mul a b = a * b
+   doOp Div a b = BD.divide (a, b) (BD.HALF_UP, Nothing)
+   doOp _ a b = error "should not happen"
+   computeUnconstrained terms identity = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) identity terms
+   delta sf bd =
+     let v' = BD.nf bd
+         dec = BD.getScale v'
+         nd = BD.precision v'
+      in sf + dec - nd
+   significantDecPlaces (SFTerm sf v) = delta sf v
+   forceSF sf' bd =
+     let bd' = BD.nf bd
+         dec = BD.getScale bd'
+         nd = BD.precision bd'
+         delta = sf' + dec - nd
+      in SFTerm sf' (roundToPlace bd' delta)
 
 main :: IO ()
-main = T.putStrLn $ case parse fullExpr "" "((3)+2) + 2" of
-  Right m -> T.pack $ show m
+main = T.putStrLn $ case parse fullExpr "" "((-.80e+1 / -.1999999999))" of
+  Right m -> niceShow $ evaluate m
   Left n -> T.pack $ show n
