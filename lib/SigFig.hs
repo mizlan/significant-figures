@@ -192,7 +192,6 @@ prec2Chain =
       do
         op <- operator
         term' <- operand
-        spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec2 (reverse terms))
 
