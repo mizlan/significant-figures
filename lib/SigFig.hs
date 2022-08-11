@@ -1,10 +1,7 @@
-{-# LANGUAGE OverloadedStrings, BlockArguments #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module SigFig
-  ( module SigFig,
-    module Data.BigDecimal,
-  )
-where
+module SigFig where
 
 import Control.Monad
 import Data.BigDecimal (BigDecimal)
@@ -123,22 +120,21 @@ exponentE = do
 
 expr :: Parses SFTree
 expr =
-  try prec2Chain
-    <|> try prec1Chain
+  try prec1Chain
+    <|> try prec2Chain
     <|> exponentE
-    <|> try leaf
     <|> try (btwnParens expr)
+    <|> try leaf
 
 fullExpr :: Parses SFTree
 fullExpr =
-  choice $
-    (<* eof)
-      <$> [ try $ btwnParens expr,
-            exponentE,
-            try prec2Chain,
-            try prec1Chain,
-            leaf
-          ]
+  choice
+    [ try prec1Chain <* eof,
+      try prec2Chain <* eof,
+      try (btwnParens expr) <* eof,
+      exponentE <* eof,
+      leaf <* eof
+    ]
 
 -- addition and subtraction. chains are necessary because sigfig-simplification
 -- only occurs on completion of evaluation of such a chain
