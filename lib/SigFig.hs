@@ -49,6 +49,7 @@ data SFTree
   = SFLeaf SFTerm
   | SFPrec1 [(Op, SFTree)]
   | SFPrec2 [(Op, SFTree)]
+  | SFExp SFTree Integer
   deriving (Show)
 
 children :: SFTree -> [(Op, SFTree)]
@@ -108,6 +109,15 @@ leaf = do
   l <- try sciNotationLike <|> try floatLike <|> try integerLike
   return $ SFLeaf l
 
+exponentE :: Parses SFTree
+exponentE = do
+  e <- try (btwnParens expr) <|> leaf
+  spaces
+  string "**"
+  spaces
+  i <- integerLike
+  return $ SFExp e (toInteger . BD.getValue . BD.nf . value $ i)
+
 expr :: Parses SFTree
 expr =
   try prec2Chain
@@ -135,7 +145,7 @@ prec1Chain =
     term' <- operand
     rest [(toOp op, term'), (Add, term)]
   where
-    operand = (try (btwnParens expr) <|> try prec2Chain <|> leaf) <* spaces
+    operand = choice (try <$> [btwnParens expr, prec2Chain, exponentE, leaf]) <* spaces
     operator = oneOf "+-" <* spaces
     rest terms =
       do
@@ -152,7 +162,7 @@ prec2Chain =
     term' <- operand
     rest [(toOp op, term'), (Mul, term)]
   where
-    operand = (try (btwnParens expr) <|> leaf) <* spaces
+    operand = choice (try <$> [btwnParens expr, exponentE, leaf]) <* spaces
     operator = oneOf "*/" <* spaces
     rest terms =
       do
@@ -193,6 +203,7 @@ evaluate t = case t of
           s = computeUnconstrained evaledSubs prec2Id
           minSF = minimum . map (numSigFigs . snd) $ evaledSubs
        in forceSF minSF s
+  (SFExp b e) -> let (SFTerm sf bd) = evaluate b in forceSF sf (bd ^^ e)
   where
     evaluateSubtrees = map (second evaluate)
     prec1Id = 0
