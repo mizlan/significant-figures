@@ -12,6 +12,6 @@
 ## coming soon
 
 * constants
-* logarithms (`log(base=b, a)`, where `b` is a constant)
-* antilogarithms (`a ^ b`, where `a` is a constant)
-* exponentiation (`a ^ b`, where `b` is a constant)
+* logarithms (`log(10c, a)`)
+* antilogarithms (`10c ^ b`)
+* exponentiation (`a ^ bc`)
