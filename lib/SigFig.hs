@@ -4,7 +4,7 @@
 module SigFig where
 
 import Control.Monad
-import Data.BigDecimal (BigDecimal)
+import Data.BigDecimal (BigDecimal (..))
 import qualified Data.BigDecimal as BD
 import Data.List
 import Data.Text (Text)
@@ -12,16 +12,23 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Read as T
 import Data.Tuple.Extra (second)
+import GHC.Real (Ratio ((:%)), (%))
 import Text.Parsec
 import Text.Parsec.Char
 
 type Parses = Parsec Text ()
 
-data SFTerm = SFTerm {numSigFigs :: Integer, value :: BigDecimal}
+data SFTerm
+  = SFMeasured {numSigFigs :: Integer, value :: BigDecimal}
+  | SFConstant Rational
   deriving (Show, Eq)
 
+isMeasured (SFMeasured _ _) = True
+isMeasured (SFConstant _) = False
+
 niceShow :: SFTerm -> Text
-niceShow (SFTerm sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " s.f.)"
+niceShow (SFMeasured sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " s.f.)"
+niceShow (SFConstant (a :% b)) = T.pack $ show a ++ "/" ++ show b ++ " (const)"
 
 data Sign = Positive | Negative
   deriving (Show, Eq)
@@ -31,7 +38,6 @@ data Op
   | Sub
   | Mul
   | Div
-  | Exp
   deriving (Show, Eq)
 
 toOp :: Char -> Op
@@ -39,7 +45,6 @@ toOp '+' = Add
 toOp '-' = Sub
 toOp '*' = Mul
 toOp '/' = Div
-toOp '^' = Exp
 toOp _ = error "should be guarded by parser"
 
 data SFTree
@@ -82,7 +87,7 @@ integerLike :: Parses SFTerm
 integerLike = do
   s <- sign
   digs <- digits
-  return . SFTerm (numSigFigsNNIntTextual digs) . signF s . BD.fromString . T.unpack $ digs
+  return . SFMeasured (numSigFigsNNIntTextual digs) . signF s . BD.fromString . T.unpack $ digs
 
 floatLike :: Parses SFTerm
 floatLike = do
@@ -92,18 +97,36 @@ floatLike = do
   rdigs <- option "" digits
   when (T.null ldigs && T.null rdigs) (unexpected "just a dot")
   let flt = ldigs <> "." <> rdigs
-  return . SFTerm (numSigFigsNNFltTextual flt) . signF s . BD.fromString . T.unpack $ flt
+  return . SFMeasured (numSigFigsNNFltTextual flt) . signF s . BD.fromString . T.unpack $ flt
 
 sciNotationLike :: Parses SFTerm
 sciNotationLike = do
-  SFTerm sf coef@(BD.BigDecimal coefValue coefScale) <- try floatLike <|> try integerLike
+  SFMeasured sf coef@(BigDecimal coefValue coefScale) <- try floatLike <|> try integerLike
   char 'e'
-  SFTerm _ (BD.BigDecimal exp _) <- integerLike
-  return $ SFTerm sf $ BD.nf $ coef * 10 ^^ exp
+  SFMeasured _ (BigDecimal exp _) <- integerLike
+  return $ SFMeasured sf $ BD.nf $ coef * 10 ^^ exp
+
+integerConstant :: Parses SFTerm
+integerConstant = do
+  SFMeasured _ (BigDecimal v _) <- integerLike
+  char 'c'
+  return . SFConstant $ v % 1
+
+floatConstant :: Parses SFTerm
+floatConstant = do
+  SFMeasured _ (BigDecimal v s) <- floatLike
+  char 'c'
+  return . SFConstant $ v % (10 ^ s)
+
+sciNotationConstant :: Parses SFTerm
+sciNotationConstant = do
+  SFMeasured _ (BigDecimal v s) <- sciNotationLike
+  char 'c'
+  return . SFConstant $ v % (10 ^ s)
 
 leaf :: Parses SFTree
 leaf = do
-  l <- try sciNotationLike <|> try floatLike <|> try integerLike
+  l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotationLike, floatLike, integerLike]
   return $ SFLeaf l
 
 exponentE :: Parses SFTree
@@ -178,10 +201,10 @@ btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
 
 -- positive integer means to the right of decimal place, negative means to the left
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
-roundToPlace bd@(BD.BigDecimal v s) dp
+roundToPlace bd@(BigDecimal v s) dp
   | dp > 0 = BD.roundBD bd $ BD.halfUp dp
   | otherwise =
-    let bd' = BD.BigDecimal v (s - dp)
+    let bd' = BigDecimal v (s - dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
 
 evaluate :: SFTree -> SFTerm
@@ -192,41 +215,59 @@ evaluate t = case t of
     [(_, SFLeaf a)] -> a
     xs ->
       let evaledSubs = evaluateSubtrees xs
-          s = computeUnconstrained evaledSubs prec1Id
-          minDP = minimum . map (significantDecPlaces . snd) $ evaledSubs
-          res = BD.nf $ roundToPlace s minDP
-       in SFTerm (BD.precision res - BD.getScale res + minDP) res
+          measured = filter (isMeasured . snd) evaledSubs
+       in if null measured
+            then SFConstant $ computeConstant evaledSubs prec1Id
+            else
+              let s = computeUnconstrained evaledSubs prec1Id
+                  minDP = minimum . map (significantDecPlaces . snd) $ measured
+                  res = BD.nf $ roundToPlace s minDP
+               in SFMeasured (BD.precision res - BD.getScale res + minDP) res
   (SFPrec2 xs) -> case xs of
     [] -> error "should not happen"
     [(_, SFLeaf a)] -> a
     xs ->
       let evaledSubs = evaluateSubtrees xs
-          s = computeUnconstrained evaledSubs prec2Id
-          minSF = minimum . map (numSigFigs . snd) $ evaledSubs
-       in forceSF minSF s
-  (SFExp b e) -> let (SFTerm sf bd) = evaluate b in forceSF sf (bd ^^ e)
+          measured = filter (isMeasured . snd) evaledSubs
+       in if null measured
+            then SFConstant $ computeConstant evaledSubs prec1Id
+            else
+              let s = computeUnconstrained evaledSubs prec2Id
+                  minSF = minimum . map (numSigFigs . snd) $ measured
+               in forceSF minSF s
+  (SFExp b e) -> case evaluate b of
+    (SFMeasured sf bd) -> forceSF sf (bd ^^ e)
+    (SFConstant a) -> SFConstant $ a ^ e
   where
     evaluateSubtrees = map (second evaluate)
+    prec1Id :: Num a => a
     prec1Id = 0
+    prec2Id :: Num a => a
     prec2Id = 1
+    computeUnconstrained terms identity = foldl' (\acc (op, SFMeasured _ v) -> doOp op acc v) identity terms
+    doOp :: Op -> BigDecimal -> BigDecimal -> BigDecimal
     doOp Add a b = a + b
     doOp Sub a b = a - b
     doOp Mul a b = a * b
     doOp Div a b = BD.divide (a, b) (BD.HALF_UP, Nothing)
-    doOp _ a b = error "should not happen"
-    computeUnconstrained terms identity = foldl' (\acc (op, SFTerm _ v) -> doOp op acc v) identity terms
+    computeConstant terms identity = foldl' (\acc (op, SFConstant v) -> doOpConstant op acc v) identity terms
+    doOpConstant :: Op -> Rational -> Rational -> Rational
+    doOpConstant Add a b = a + b
+    doOpConstant Sub a b = a - b
+    doOpConstant Mul a b = a * b
+    doOpConstant Div a b = a / b
     delta sf bd =
       let v' = BD.nf bd
           dec = BD.getScale v'
           nd = BD.precision v'
        in sf + dec - nd
-    significantDecPlaces (SFTerm sf v) = delta sf v
+    significantDecPlaces (SFMeasured sf v) = delta sf v
     forceSF sf' bd =
       let bd' = BD.nf bd
           dec = BD.getScale bd'
           nd = BD.precision bd'
           delta = sf' + dec - nd
-       in SFTerm sf' (roundToPlace bd' delta)
+       in SFMeasured sf' (roundToPlace bd' delta)
 
 maybeParse :: Text -> Maybe SFTerm
 maybeParse e = case parse fullExpr "" e of
