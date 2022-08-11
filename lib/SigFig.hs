@@ -130,39 +130,34 @@ fullExpr =
 prec1Chain :: Parses SFTree
 prec1Chain =
   do
-    term <- try (btwnParens expr) <|> try prec2Chain <|> leaf
-    spaces
-    op <- oneOf "+-"
-    spaces
-    term' <- try (btwnParens expr) <|> try prec2Chain <|> leaf
-    spaces
+    term <- operand
+    op <- operator
+    term' <- operand
     rest [(toOp op, term'), (Add, term)]
   where
+    operand = (try (btwnParens expr) <|> try prec2Chain <|> leaf) <* spaces
+    operator = oneOf "+-" <* spaces
     rest terms =
       do
-        op <- oneOf "+-"
-        spaces
-        term' <- try (btwnParens expr) <|> try prec2Chain <|> leaf
-        spaces
+        op <- operator
+        term' <- operand
         rest ((toOp op, term') : terms)
         <|> return (SFPrec1 (reverse terms))
 
 prec2Chain :: Parses SFTree
 prec2Chain =
   do
-    term <- try (btwnParens expr) <|> leaf
-    spaces
-    op <- oneOf "*/"
-    spaces
-    term' <- try (btwnParens expr) <|> leaf
-    spaces
+    term <- operand
+    op <- operator
+    term' <- operand
     rest [(toOp op, term'), (Mul, term)]
   where
+    operand = (try (btwnParens expr) <|> leaf) <* spaces
+    operator = oneOf "*/" <* spaces
     rest terms =
       do
-        op <- oneOf "*/"
-        spaces
-        term' <- try (btwnParens expr) <|> leaf
+        op <- operator
+        term' <- operand
         spaces
         rest ((toOp op, term') : terms)
         <|> return (SFPrec2 (reverse terms))
