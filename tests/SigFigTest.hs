@@ -14,7 +14,7 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "basic tests" [singleTermTests, singleTermParenTests, singleOpTests]
+tests = testGroup "basic tests" [singleTermTests, singleTermParenTests, singleOpTests, orderOfOperations]
 
 singleTermTests :: TestTree
 singleTermTests = testGroup "basic single terms"
@@ -50,6 +50,8 @@ singleOpTests = testGroup "single operations"
       maybeParse "3 * 2" @?= Just (mkSFTerm 1 6 0)
   , testCase "parse division with parens" $
       maybeParse "(4 / 2) / 2" @?= Just (mkSFTerm 1 1 0)
+  , testCase "parse exponentiation" $
+      maybeParse "2 ** 3" @?= Just (mkSFTerm 1 8 0)
   ]
 
 orderOfOperations :: TestTree
@@ -57,9 +59,9 @@ orderOfOperations = testGroup "order of operations"
   [ testCase "addition after multiplication" $
       maybeParse "1 + 3 * 2" @?= Just (mkSFTerm 1 7 0)
   , testCase "multiplication before subtraction" $
-      maybeParse "2.1 * 2.0 - 0.3" @?= Just (mkSFTerm 2 (39) 1)
+      maybeParse "2.1 * 2.0 - 0.3" @?= Just (mkSFTerm 2 39 1)
   , testCase "exp > mul > add" $
-      maybeParse "2.1 + 2.0 * antilog(3.3)" @?= Just (mkSFTerm 1 6 0)
-  , testCase "parse division with parens" $
-      maybeParse "(4 / 2) / 2" @?= Just (mkSFTerm 1 1 0)
+      maybeParse "2.1 + 2.0 * 1.4 ** 2" @?= Just (mkSFTerm 2 61 1)
+  , testCase "division after exponentiation" $
+      maybeParse "4 / 2 ** 2" @?= Just (mkSFTerm 1 1 0)
   ]

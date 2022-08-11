@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, BlockArguments #-}
 
 module SigFig
   ( module SigFig,
@@ -111,27 +111,32 @@ leaf = do
 
 exponentE :: Parses SFTree
 exponentE = do
-  e <- try (btwnParens expr) <|> leaf
-  spaces
-  string "**"
-  spaces
-  i <- integerLike
-  return $ SFExp e (toInteger . BD.getValue . BD.nf . value $ i)
+  e <- try do
+    k <- try (btwnParens expr) <|> try leaf
+    spaces
+    string "**"
+    spaces
+    return k
+  i <- toInteger . BD.getValue . BD.nf . value <$> try integerLike
+  when (i < 0) $ unexpected "negative exponent"
+  return $ SFExp e i
 
 expr :: Parses SFTree
 expr =
   try prec2Chain
     <|> try prec1Chain
+    <|> exponentE
     <|> try leaf
     <|> try (btwnParens expr)
 
 fullExpr :: Parses SFTree
 fullExpr =
   choice $
-    try . (<* eof)
-      <$> [ btwnParens expr,
-            prec2Chain,
-            prec1Chain,
+    (<* eof)
+      <$> [ try $ btwnParens expr,
+            exponentE,
+            try prec2Chain,
+            try prec1Chain,
             leaf
           ]
 
@@ -145,7 +150,7 @@ prec1Chain =
     term' <- operand
     rest [(toOp op, term'), (Add, term)]
   where
-    operand = choice (try <$> [btwnParens expr, prec2Chain, exponentE, leaf]) <* spaces
+    operand = choice [try $ btwnParens expr, try prec2Chain, exponentE, leaf] <* spaces
     operator = oneOf "+-" <* spaces
     rest terms =
       do
