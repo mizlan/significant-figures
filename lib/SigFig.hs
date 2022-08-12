@@ -251,18 +251,12 @@ evaluate t = case t of
     doOpConstant Sub a b = a - b
     doOpConstant Mul a b = a * b
     doOpConstant Div a b = a / b
-    delta sf bd =
+    significantDecPlaces sf bd =
       let v' = BD.nf bd
           dec = BD.getScale v'
           nd = BD.precision v'
        in sf + dec - nd
-    significantDecPlaces sf v = delta sf v
-    forceSF sf' bd =
-      let bd' = BD.nf bd
-          dec = BD.getScale bd'
-          nd = BD.precision bd'
-          delta = sf' + dec - nd
-       in SFMeasured sf' (roundToPlace bd' delta)
+    forceSF sf' bd = SFMeasured sf' $ roundToPlace bd $ significantDecPlaces sf' bd
 
 maybeParse :: Text -> Maybe SFTerm
 maybeParse e = case parse fullExpr "" e of
