@@ -243,7 +243,7 @@ evaluate t = case t of
                   minSF = minimum . map (numSigFigs . snd) $ measured
                in forceSF minSF (fromRational s)
   (SFExp b e) -> case evaluate b of
-    (SFMeasured sf bd) -> forceSF sf (bd ^^ e)
+    (SFMeasured sf bd) -> forceSF sf (bd ^ e)
     (SFConstant a) -> SFConstant $ a ^ e
   where
     evaluateSubtrees = map (second evaluate)
