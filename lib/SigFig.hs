@@ -256,9 +256,15 @@ evaluate t = case t of
     prec1Id = 0
     prec2Id = 1
     computeUnconstrained :: [(Op, SFTerm)] -> Rational -> Rational
-    computeUnconstrained terms identity = foldl' (\acc ->
-      \case (op, SFMeasured _ v) -> doOpConstant op acc (toRational v)
-            (op, SFConstant v) -> doOpConstant op acc v) identity terms
+    computeUnconstrained terms identity =
+      foldl'
+        ( \acc ->
+            \case
+              (op, SFMeasured _ v) -> doOpConstant op acc (toRational v)
+              (op, SFConstant v) -> doOpConstant op acc v
+        )
+        identity
+        terms
     doOpConstant :: Op -> Rational -> Rational -> Rational
     doOpConstant Add a b = a + b
     doOpConstant Sub a b = a - b
