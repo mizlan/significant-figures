@@ -68,11 +68,6 @@ data SFTree
   | SFExp SFTree Integer
   deriving (Show)
 
-children :: SFTree -> [(Op, SFTree)]
-children (SFPrec1 xs) = xs
-children (SFPrec2 xs) = xs
-children _ = []
-
 sign :: Parses Sign
 sign =
   do char '-'; return Negative
