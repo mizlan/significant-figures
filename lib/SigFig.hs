@@ -258,8 +258,15 @@ evaluate t = case t of
        in sf + dec - nd
     forceSF sf' bd = SFMeasured sf' $ roundToPlace bd $ significantDecPlaces sf' bd
 
-maybeParse :: Text -> Maybe SFTerm
-maybeParse e = case parse fullExpr "" e of
+textify :: Either ParseError a -> Either Text a
+textify (Right m) = Right m
+textify (Left e) = Left . T.pack . show $ e
+
+parseFullExpr :: Text -> Either Text SFTree
+parseFullExpr e = textify $ parse fullExpr "" e
+
+maybeParseEval :: Text -> Maybe SFTerm
+maybeParseEval e = case parse fullExpr "" e of
   Right m -> Just $ evaluate m
   Left _ -> Nothing
 
