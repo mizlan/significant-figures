@@ -130,5 +130,7 @@ complexExpressions =
       testCase "constant division" $
         maybeParseEval "2c/1c/2c/1c/2c * 8" @?= Just (mkSFMeasured 1 4 0),
       testCase "constant division 2" $
-        maybeParseEval "2c/1c/2c/1c/2c * 8c" @?= Just (SFConstant 4)
+        maybeParseEval "2c/1c/2c/1c/2c * 8c" @?= Just (SFConstant 4),
+      testCase "interspersed constants and measured" $
+        maybeParseEval "((2c) + 3.1 * (4.7c) ** 1)" @?= Just (mkSFMeasured 2 17 0)
     ]
