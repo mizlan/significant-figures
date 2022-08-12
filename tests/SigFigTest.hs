@@ -63,7 +63,11 @@ singleTermParenTests =
       testCase "parse sci-not integer w/ spaces" $
         maybeParse "(-5e7   )" @?= Just (mkSFMeasured 1 (-5) (-7)),
       testCase "parse sci-not float w/ double parens and spaces" $
-        maybeParse "(  (5.24e-2) )" @?= Just (mkSFMeasured 3 524 4)
+        maybeParse "(  (5.24e-2) )" @?= Just (mkSFMeasured 3 524 4),
+      testCase "parse sci-not constant w/ spaces" $
+        maybeParse "(-.51e7c )" @?= Just (SFConstant $ (-51) * 10 ^ 5),
+      testCase "parse sci-not constant w/ double parens and spaces" $
+        maybeParse "(  (2.e-2c) )" @?= Just (SFConstant 0.02)
     ]
 
 singleOpTests :: TestTree
