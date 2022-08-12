@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module SigFig where
 
@@ -216,11 +217,11 @@ evaluate t = case t of
       let evaledSubs = evaluateSubtrees xs
           measured = filter (isMeasured . snd) evaledSubs
        in if null measured
-            then SFConstant $ computeConstant evaledSubs prec1Id
+            then SFConstant $ computeUnconstrained evaledSubs prec1Id
             else
               let s = computeUnconstrained evaledSubs prec1Id
-                  minDP = minimum . map (significantDecPlaces . snd) $ measured
-                  res = BD.nf $ roundToPlace s minDP
+                  minDP = minimum $ [significantDecPlaces sf bd | (_, SFMeasured sf bd) <- measured]
+                  res = BD.nf $ roundToPlace (fromRational s) minDP
                in SFMeasured (BD.precision res - BD.getScale res + minDP) res
   (SFPrec2 xs) -> case xs of
     [] -> error "should not happen"
@@ -229,27 +230,22 @@ evaluate t = case t of
       let evaledSubs = evaluateSubtrees xs
           measured = filter (isMeasured . snd) evaledSubs
        in if null measured
-            then SFConstant $ computeConstant evaledSubs prec1Id
+            then SFConstant $ computeUnconstrained evaledSubs prec1Id
             else
               let s = computeUnconstrained evaledSubs prec2Id
                   minSF = minimum . map (numSigFigs . snd) $ measured
-               in forceSF minSF s
+               in forceSF minSF (fromRational s)
   (SFExp b e) -> case evaluate b of
     (SFMeasured sf bd) -> forceSF sf (bd ^^ e)
     (SFConstant a) -> SFConstant $ a ^ e
   where
     evaluateSubtrees = map (second evaluate)
-    prec1Id :: Num a => a
     prec1Id = 0
-    prec2Id :: Num a => a
     prec2Id = 1
-    computeUnconstrained terms identity = foldl' (\acc (op, SFMeasured _ v) -> doOp op acc v) identity terms
-    doOp :: Op -> BigDecimal -> BigDecimal -> BigDecimal
-    doOp Add a b = a + b
-    doOp Sub a b = a - b
-    doOp Mul a b = a * b
-    doOp Div a b = BD.divide (a, b) (BD.HALF_UP, Nothing)
-    computeConstant terms identity = foldl' (\acc (op, SFConstant v) -> doOpConstant op acc v) identity terms
+    computeUnconstrained :: [(Op, SFTerm)] -> Rational -> Rational
+    computeUnconstrained terms identity = foldl' (\acc ->
+      \case (op, SFMeasured _ v) -> doOpConstant op acc (toRational v)
+            (op, SFConstant v) -> doOpConstant op acc v) identity terms
     doOpConstant :: Op -> Rational -> Rational -> Rational
     doOpConstant Add a b = a + b
     doOpConstant Sub a b = a - b
@@ -260,7 +256,7 @@ evaluate t = case t of
           dec = BD.getScale v'
           nd = BD.precision v'
        in sf + dec - nd
-    significantDecPlaces (SFMeasured sf v) = delta sf v
+    significantDecPlaces sf v = delta sf v
     forceSF sf' bd =
       let bd' = BD.nf bd
           dec = BD.getScale bd'
