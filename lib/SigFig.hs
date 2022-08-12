@@ -230,7 +230,7 @@ evaluate t = case t of
       let evaledSubs = evaluateSubtrees xs
           measured = filter (isMeasured . snd) evaledSubs
        in if null measured
-            then SFConstant $ computeUnconstrained evaledSubs prec1Id
+            then SFConstant $ computeUnconstrained evaledSubs prec2Id
             else
               let s = computeUnconstrained evaledSubs prec2Id
                   minSF = minimum . map (numSigFigs . snd) $ measured
