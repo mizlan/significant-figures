@@ -173,41 +173,40 @@ fullExpr =
       leaf <* eof
     ]
 
--- addition and subtraction. chains are necessary because sigfig-simplification
+-- generate chains: necessary because sigfig-simplification
 -- only occurs on completion of evaluation of such a chain
-prec1Chain :: Parses SFTree
-prec1Chain =
+precChain :: [Parses SFTree] -> Parses Char -> ([(Op, SFTree)] -> SFTree) -> Op -> Parses SFTree
+precChain validOperands validOperator constructor idOp =
   do
     term <- operand
     op <- operator
     term' <- operand
-    rest [(toOp op, term'), (Add, term)]
+    rest [(toOp op, term'), (idOp, term)]
   where
-    operand = choice [try prec2Chain, exponentE, try $ btwnParens expr, leaf] <* spaces
-    operator = oneOf "+-" <* spaces
+    operand = choice validOperands <* spaces
+    operator = validOperator <* spaces
     rest terms =
       do
         op <- operator
         term' <- operand
         rest ((toOp op, term') : terms)
-        <|> return (SFPrec1 (reverse terms))
+        <|> return (constructor (reverse terms))
+
+prec1Chain :: Parses SFTree
+prec1Chain =
+  precChain
+    [try prec2Chain, exponentE, try $ btwnParens expr, leaf]
+    (oneOf "+-")
+    SFPrec1
+    Add
 
 prec2Chain :: Parses SFTree
 prec2Chain =
-  do
-    term <- operand
-    op <- operator
-    term' <- operand
-    rest [(toOp op, term'), (Mul, term)]
-  where
-    operand = choice (try <$> [exponentE, btwnParens expr, leaf]) <* spaces
-    operator = oneOf "*/" <* spaces
-    rest terms =
-      do
-        op <- operator
-        term' <- operand
-        rest ((toOp op, term') : terms)
-        <|> return (SFPrec2 (reverse terms))
+  precChain
+    [exponentE, try $ btwnParens expr, leaf]
+    (oneOf "*/")
+    SFPrec2
+    Mul
 
 btwnParens :: Parses a -> Parses a
 btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
