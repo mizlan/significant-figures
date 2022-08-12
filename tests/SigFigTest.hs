@@ -3,10 +3,10 @@
 module Main where
 
 import Data.BigDecimal
+import Data.Ratio
 import SigFig
 import Test.Tasty
 import Test.Tasty.HUnit
-import Data.Ratio
 
 mkSFMeasured :: Integer -> Integer -> Integer -> SFTerm
 mkSFMeasured sf v s = SFMeasured sf (BigDecimal v s)
@@ -23,7 +23,8 @@ tests =
       singleConstantTests,
       constantOpTests,
       singleOpTests,
-      orderOfOperations
+      orderOfOperations,
+      complexExpressions
     ]
 
 singleTermTests :: TestTree
@@ -111,5 +112,19 @@ orderOfOperations =
       testCase "exp > mul > add" $
         maybeParseEval "2.1 + 2.0 * 1.4 ** 2" @?= Just (mkSFMeasured 2 61 1),
       testCase "division after exponentiation" $
-        maybeParseEval "4 / 2 ** 2" @?= Just (mkSFMeasured 1 1 0)
+        maybeParseEval "4 / 2 ** 2" @?= Just (mkSFMeasured 1 1 0),
+      testCase "simple as can be" $
+        maybeParseEval "(2) * 4 - 1" @?= Just (mkSFMeasured 1 7 0)
+    ]
+
+complexExpressions :: TestTree
+complexExpressions =
+  testGroup
+    "complex expressions"
+    [ testCase "complex 1 with rounding" $
+        maybeParseEval "(2 + 3.8 * 4.1) ** 2 - 20" @?= Just (mkSFMeasured 2 300 0),
+      testCase "mix constants with measured" $
+        maybeParseEval "2.0001 * 4c + 18.000007c" @?= Just (mkSFMeasured 6 260004 4),
+      testCase "mix constants with measured 2" $
+        maybeParseEval "4.01c + 28.4c + 18.12412" @?= Just (mkSFMeasured 7 5053412 5)
     ]

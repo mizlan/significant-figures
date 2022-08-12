@@ -155,8 +155,8 @@ fullExpr =
   choice
     [ try prec1Chain <* eof,
       try prec2Chain <* eof,
-      try (btwnParens expr) <* eof,
       exponentE <* eof,
+      try (btwnParens expr) <* eof,
       leaf <* eof
     ]
 
@@ -170,7 +170,7 @@ prec1Chain =
     term' <- operand
     rest [(toOp op, term'), (Add, term)]
   where
-    operand = choice [try $ btwnParens expr, try prec2Chain, exponentE, leaf] <* spaces
+    operand = choice [try prec2Chain, exponentE, try $ btwnParens expr, leaf] <* spaces
     operator = oneOf "+-" <* spaces
     rest terms =
       do
@@ -187,7 +187,7 @@ prec2Chain =
     term' <- operand
     rest [(toOp op, term'), (Mul, term)]
   where
-    operand = choice (try <$> [btwnParens expr, exponentE, leaf]) <* spaces
+    operand = choice (try <$> [exponentE, btwnParens expr, leaf]) <* spaces
     operator = oneOf "*/" <* spaces
     rest terms =
       do
