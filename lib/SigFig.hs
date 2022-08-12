@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module SigFig where
 
@@ -29,7 +29,20 @@ isMeasured (SFConstant _) = False
 
 niceShow :: SFTerm -> Text
 niceShow (SFMeasured sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " s.f.)"
-niceShow (SFConstant (a :% b)) = T.pack $ show a ++ "/" ++ show b ++ " (const)"
+niceShow (SFConstant v@(a :% b)) =
+  T.pack $
+    if isTerminating b
+      then (BD.toString . BD.nf . fromRational $ v) ++ " (const)"
+      else show a ++ "/" ++ show b ++ " (non-terminating const)"
+  where
+    isTerminating n = re10 n == 1
+      where
+        re10 n =
+          let (q, r) = n `quotRem` 5
+           in if r == 0 then re10 q else re2 n
+        re2 n =
+          let (q, r) = n `quotRem` 2
+           in if r == 0 then re2 q else n
 
 data Sign = Positive | Negative
   deriving (Show, Eq)
