@@ -34,10 +34,10 @@ niceShow (SFConstant v@(a :% b)) =
       then (BD.toString . BD.nf . fromRational $ v) ++ " (const)"
       else show a ++ "/" ++ show b ++ " (non-terminating const)"
   where
-    isTerminating = (== 1) . extRem 5 . extRem 2
+    isTerminating = (== 1) . stripFactor 5 . stripFactor 2
       where
-        extRem d n = case n `quotRem` d of
-          (q, 0) -> extRem d q
+        stripFactor d n = case n `quotRem` d of
+          (q, 0) -> stripFactor d q
           _ -> n
 data Sign = Positive | Negative
   deriving (Show, Eq)
