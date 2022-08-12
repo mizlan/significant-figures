@@ -19,6 +19,7 @@ tests =
     "basic tests"
     [ singleTermTests,
       singleTermParenTests,
+      singleConstantTests,
       singleOpTests,
       orderOfOperations
     ]
@@ -41,14 +42,14 @@ singleConstantTests :: TestTree
 singleConstantTests =
   testGroup
     "basic single constants"
-    [ testCase "parse positive integer" $
+    [ testCase "parse positive integer constant" $
         maybeParse "2c" @?= Just (SFConstant 2),
-      testCase "parse negative integer" $
-        maybeParse "-3" @?= Just (SFConstant (-3)),
-      testCase "parse sci-not integer" $
+      testCase "parse negative integer constant" $
+        maybeParse "-3c" @?= Just (SFConstant (-3)),
+      testCase "parse sci-not integer constant" $
         maybeParse "-5e7c" @?= Just (SFConstant ((-5) * 10 ^ 7)),
-      testCase "parse sci-not float" $
-        maybeParse "5.24e-2" @?= Just (SFConstant ((5.24 * 10 ^ (-2)) :: Rational))
+      testCase "parse sci-not float constant" $
+        maybeParse "5.24e-2c" @?= Just (SFConstant ((5.24 / 10 ^ 2) :: Rational))
     ]
 
 singleTermParenTests :: TestTree
