@@ -6,6 +6,7 @@ import Data.BigDecimal
 import SigFig
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Ratio
 
 mkSFMeasured :: Integer -> Integer -> Integer -> SFTerm
 mkSFMeasured sf v s = SFMeasured sf (BigDecimal v s)
@@ -20,6 +21,7 @@ tests =
     [ singleTermTests,
       singleTermParenTests,
       singleConstantTests,
+      constantOpTests,
       singleOpTests,
       orderOfOperations
     ]
@@ -68,6 +70,18 @@ singleTermParenTests =
         maybeParse "(-.51e7c )" @?= Just (SFConstant $ (-51) * 10 ^ 5),
       testCase "parse sci-not constant w/ double parens and spaces" $
         maybeParse "(  (2.e-2c) )" @?= Just (SFConstant 0.02)
+    ]
+
+constantOpTests :: TestTree
+constantOpTests =
+  testGroup
+    "constant operations"
+    [ testCase "add two constant ints" $
+        maybeParse "2c + 25c" @?= Just (SFConstant 27),
+      testCase "add constant int and constant float" $
+        maybeParse "0.2c + 400c" @?= Just (SFConstant 400.2),
+      testCase "divide constant int and constant float" $
+        maybeParse "1c / 3.0c" @?= Just (SFConstant (1 % 3))
     ]
 
 singleOpTests :: TestTree
