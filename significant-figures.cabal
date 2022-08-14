@@ -40,7 +40,8 @@ executable significant-figures
                    ,parsec
                    ,HasBigDecimal
                    ,extra
-                   ,haskeline
+                   ,haskeline ==0.8.1.3
+                   ,terminfo >=0.4.1.5
                    ,significant-figures
 
 test-suite significant-figures-test
