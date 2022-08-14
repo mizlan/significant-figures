@@ -98,7 +98,11 @@ singleOpTests =
       testCase "parse division with parens" $
         parseEval "(4 / 2) / 2" @?= Right (mkSFMeasured 1 1 0),
       testCase "parse exponentiation" $
-        parseEval "2 ** 3" @?= Right (mkSFMeasured 1 8 0)
+        parseEval "2 ** 3" @?= Right (mkSFMeasured 1 8 0),
+      testCase "parse log" $
+        parseEval "log(10)" @?= Right (mkSFMeasured 2 1 0),
+      testCase "parse log 2" $
+        parseEval "log(log(10000000000))" @?= Right (mkSFMeasured 4 1 0)
     ]
 
 orderOfOperations :: TestTree
