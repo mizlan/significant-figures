@@ -163,6 +163,7 @@ expr =
     <|> try prec2Chain
     <|> exponentE
     <|> try (btwnParens expr)
+    <|> try (function Log10 "log")
     <|> try leaf
 
 fullExpr :: Parses SFTree
@@ -221,42 +222,47 @@ roundToPlace bd@(BigDecimal v s) dp
     let bd' = BigDecimal v (s - dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
 
-evaluate :: SFTree -> SFTerm
+evaluate :: SFTree -> Either Text SFTerm
 evaluate t = case t of
-  (SFLeaf a) -> a
+  (SFLeaf a) -> Right a
   (SFPrec1 xs) -> case xs of
-    [] -> error "should not happen"
-    [(_, SFLeaf a)] -> a
-    xs ->
-      let evaledSubs = evaluateSubtrees xs
-          measured = filter (isMeasured . snd) evaledSubs
+    [] -> Left "should not happen"
+    [(_, SFLeaf a)] -> Right a
+    xs -> do
+      evaledSubs <- evaluateSubtrees xs
+      let measured = filter (isMeasured . snd) evaledSubs
        in if null measured
-            then SFConstant $ computeUnconstrained evaledSubs prec1Id
+            then Right $ SFConstant $ computeUnconstrained evaledSubs prec1Id
             else
               let s = computeUnconstrained evaledSubs prec1Id
                   minDP = minimum $ [significantDecPlaces sf bd | (_, SFMeasured sf bd) <- measured]
                   res = BD.nf $ roundToPlace (fromRational s) minDP
-               in SFMeasured (BD.precision res - BD.getScale res + minDP) res
+               in Right $ SFMeasured (BD.precision res - BD.getScale res + minDP) res
   (SFPrec2 xs) -> case xs of
-    [] -> error "should not happen"
-    [(_, SFLeaf a)] -> a
-    xs ->
-      let evaledSubs = evaluateSubtrees xs
-          measured = filter (isMeasured . snd) evaledSubs
+    [] -> Left "should not happen"
+    [(_, SFLeaf a)] -> Right a
+    xs -> do
+      evaledSubs <- evaluateSubtrees xs
+      let measured = filter (isMeasured . snd) evaledSubs
        in if null measured
-            then SFConstant $ computeUnconstrained evaledSubs prec2Id
+            then Right $ SFConstant $ computeUnconstrained evaledSubs prec2Id
             else
               let s = computeUnconstrained evaledSubs prec2Id
                   minSF = minimum . map (numSigFigs . snd) $ measured
-               in forceSF minSF (fromRational s)
-  (SFExp b e) -> case evaluate b of
-    (SFMeasured sf bd) -> forceSF sf (bd ^ e)
-    (SFConstant a) -> SFConstant $ a ^ e
-  (SFFunction f e) -> case evaluate e of
-    (SFMeasured sf bd) -> undefined
-    (SFConstant a) -> error "bruh"
+               in Right $ forceSF minSF (fromRational s)
+  (SFExp b e) -> do
+    res <- evaluate b
+    case res of
+      (SFMeasured sf bd) -> Right $ forceSF sf (bd ^ e)
+      (SFConstant a) -> Right $ SFConstant $ a ^ e
+  (SFFunction f e) -> do
+    res <- evaluate e
+    case res of
+      (SFMeasured sf bd) -> undefined
+      (SFConstant a) -> undefined
   where
-    evaluateSubtrees = map (second evaluate)
+    evaluateSubtrees :: [(a, SFTree)] -> Either Text [(a, SFTerm)]
+    evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs
     prec1Id = 0
     prec2Id = 1
     computeUnconstrained :: [(Op, SFTerm)] -> Rational -> Rational
