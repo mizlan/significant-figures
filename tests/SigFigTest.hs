@@ -127,7 +127,7 @@ orderOfOperations =
       testCase "exp log" $
         parseEval "log(10 ** 3)" @?= Right (mkSFMeasured 2 3 0),
       testCase "exp log 2" $
-        assertBool "log of constant" . isLeft . parseEval $ "log(10c ** 3)"
+        (isLeft . parseEval $ "log(10c ** 3)") @? "log of constant"
     ]
 
 complexExpressions :: TestTree
