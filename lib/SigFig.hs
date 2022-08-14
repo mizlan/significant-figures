@@ -281,15 +281,13 @@ textify :: Either ParseError a -> Either Text a
 textify (Right m) = Right m
 textify (Left e) = Left . T.pack . show $ e
 
-parseFullExpr :: Text -> Either Text SFTree
-parseFullExpr e = textify $ parse fullExpr "" e
+parseEval :: Text -> Either Text SFTerm
+parseEval e = textify (parse fullExpr "" e) >>= evaluate
 
-maybeParseEval :: Text -> Maybe SFTerm
-maybeParseEval e = case parse fullExpr "" e of
-  Right m -> Just $ evaluate m
-  Left _ -> Nothing
+-- maybeParseEval :: Text -> Maybe SFTerm
+-- maybeParseEval e = case parse fullExpr "" e of
+--   Right m -> Just $ evaluate m
+--   Left _ -> Nothing
 
 processExpression :: Text -> Text
-processExpression e = case parse fullExpr "" e of
-  Right m -> niceShow $ evaluate m
-  Left n -> "Error: " <> T.pack (show n)
+processExpression e = either ("Error:" <>) niceShow $ parseEval e
