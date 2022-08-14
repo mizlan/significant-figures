@@ -56,11 +56,15 @@ toOp '*' = Mul
 toOp '/' = Div
 toOp _ = error "should be guarded by parser"
 
+data Function = Log10
+  deriving (Show)
+
 data SFTree
   = SFLeaf SFTerm
   | SFPrec1 [(Op, SFTree)]
   | SFPrec2 [(Op, SFTree)]
   | SFExp SFTree Integer
+  | SFFunction Function SFTree
   deriving (Show)
 
 sign :: Parses Sign
@@ -144,6 +148,14 @@ exponentE = do
   i <- toInteger . BD.getValue . BD.nf . value <$> try integerLike
   when (i < 0) $ unexpected "negative exponent"
   return $ SFExp e i
+
+function :: Function -> Text -> Parses SFTree
+function func funcName = do
+  string $ T.unpack funcName
+  char '('
+  e <- expr
+  char ')'
+  pure $ SFFunction func e
 
 expr :: Parses SFTree
 expr =
@@ -240,6 +252,9 @@ evaluate t = case t of
   (SFExp b e) -> case evaluate b of
     (SFMeasured sf bd) -> forceSF sf (bd ^ e)
     (SFConstant a) -> SFConstant $ a ^ e
+  (SFFunction f e) -> case evaluate e of
+    (SFMeasured sf bd) -> undefined
+    (SFConstant a) -> error "bruh"
   where
     evaluateSubtrees = map (second evaluate)
     prec1Id = 0
