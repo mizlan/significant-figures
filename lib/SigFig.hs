@@ -174,7 +174,7 @@ fullExpr =
       try prec2Chain <* eof,
       exponentE <* eof,
       try (btwnParens expr) <* eof,
-      try (function Log10 "log"),
+      try (function Log10 "log") <* eof,
       leaf <* eof
     ]
 
@@ -200,7 +200,7 @@ precChain validOperands validOperator constructor idOp =
 prec1Chain :: Parses SFTree
 prec1Chain =
   precChain
-    [try prec2Chain, exponentE, try $ btwnParens expr, leaf]
+    [try prec2Chain, exponentE, try $ btwnParens expr, function Log10 "log", leaf]
     (oneOf "+-")
     SFPrec1
     Add
@@ -208,7 +208,7 @@ prec1Chain =
 prec2Chain :: Parses SFTree
 prec2Chain =
   precChain
-    [exponentE, try $ btwnParens expr, leaf]
+    [exponentE, try $ btwnParens expr, function Log10 "log", leaf]
     (oneOf "*/")
     SFPrec2
     Mul
