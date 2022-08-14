@@ -14,7 +14,7 @@ import qualified Data.Text.Read as T
 import Data.Tuple.Extra (second)
 import GHC.Real (Ratio ((:%)), (%))
 import Text.Parsec
-import Text.Parsec.Char
+import Text.Printf (printf)
 
 type Parses = Parsec Text ()
 
@@ -39,6 +39,7 @@ niceShow (SFConstant v@(a :% b)) =
         stripFactor d n = case n `quotRem` d of
           (q, 0) -> stripFactor d q
           _ -> n
+
 data Sign = Positive | Negative
   deriving (Show, Eq)
 
@@ -173,6 +174,7 @@ fullExpr =
       try prec2Chain <* eof,
       exponentE <* eof,
       try (btwnParens expr) <* eof,
+      try (function Log10 "log"),
       leaf <* eof
     ]
 
@@ -236,8 +238,7 @@ evaluate t = case t of
             else
               let s = computeUnconstrained evaledSubs prec1Id
                   minDP = minimum $ [significantDecPlaces sf bd | (_, SFMeasured sf bd) <- measured]
-                  res = BD.nf $ roundToPlace (fromRational s) minDP
-               in Right $ SFMeasured (BD.precision res - BD.getScale res + minDP) res
+               in Right . forceDP minDP $ fromRational s
   (SFPrec2 xs) -> case xs of
     [] -> Left "should not happen"
     [(_, SFLeaf a)] -> Right a
@@ -249,17 +250,23 @@ evaluate t = case t of
             else
               let s = computeUnconstrained evaledSubs prec2Id
                   minSF = minimum . map (numSigFigs . snd) $ measured
-               in Right $ forceSF minSF (fromRational s)
+               in Right . forceSF minSF $ fromRational s
   (SFExp b e) -> do
     res <- evaluate b
     case res of
       (SFMeasured sf bd) -> Right $ forceSF sf (bd ^ e)
-      (SFConstant a) -> Right $ SFConstant $ a ^ e
+      (SFConstant a) -> Right . SFConstant $ a ^ e
   (SFFunction f e) -> do
     res <- evaluate e
     case res of
-      (SFMeasured sf bd) -> undefined
-      (SFConstant a) -> undefined
+      (SFMeasured sf bd) ->
+        Right . forceDP sf . BD.fromString
+          . printf "%f"
+          . logBase (10 :: Float)
+          . fromRational
+          . toRational
+          $ bd
+      (SFConstant a) -> Left "taking the log of a constant is unsupported"
   where
     evaluateSubtrees :: [(a, SFTree)] -> Either Text [(a, SFTerm)]
     evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs
@@ -282,6 +289,11 @@ evaluate t = case t of
           nd = BD.precision v'
        in sf + dec - nd
     forceSF sf' bd = SFMeasured sf' $ roundToPlace bd $ significantDecPlaces sf' bd
+
+forceDP :: Integer -> BigDecimal -> SFTerm
+forceDP dp bd =
+  let res = BD.nf $ roundToPlace bd dp
+   in SFMeasured (BD.precision res - BD.getScale res + dp) res
 
 textify :: Either ParseError a -> Either Text a
 textify (Right m) = Right m
