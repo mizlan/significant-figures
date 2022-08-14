@@ -7,6 +7,7 @@ import Data.Ratio
 import SigFig
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Either (isLeft)
 
 mkSFMeasured :: Integer -> Integer -> Integer -> SFTerm
 mkSFMeasured sf v s = SFMeasured sf (BigDecimal v s)
@@ -118,7 +119,15 @@ orderOfOperations =
       testCase "division after exponentiation" $
         parseEval "4 / 2 ** 2" @?= Right (mkSFMeasured 1 1 0),
       testCase "simple as can be" $
-        parseEval "(2) * 4 - 1" @?= Right (mkSFMeasured 1 7 0)
+        parseEval "(2) * 4 - 1" @?= Right (mkSFMeasured 1 7 0),
+      testCase "logs first" $
+        parseEval "log(10) * log(10) * 2.1" @?= Right (mkSFMeasured 2 21 1),
+      testCase "logs last" $
+        parseEval "log(2c * 7.0)" @?= Right (mkSFMeasured 3 115 2),
+      testCase "exp log" $
+        parseEval "log(10 ** 3)" @?= Right (mkSFMeasured 2 3 0),
+      testCase "exp log 2" $
+        assertBool "log of constant" . isLeft . parseEval $ "log(10c ** 3)"
     ]
 
 complexExpressions :: TestTree
