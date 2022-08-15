@@ -3,10 +3,10 @@
 
 module SigFig where
 
-import Control.Monad
+import Control.Monad (when)
 import Data.BigDecimal (BigDecimal (..))
 import qualified Data.BigDecimal as BD
-import Data.List
+import Data.Foldable (foldl')
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
