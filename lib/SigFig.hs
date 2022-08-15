@@ -320,8 +320,7 @@ evaluate t = case t of
             Right . forceDP sf . BD.fromString
               . printf "%f"
               . logBase (10 :: Float)
-              . fromRational
-              . toRational
+              . realToFrac
               $ bd
           (SFConstant a) -> Left "taking the log of a constant is unsupported"
       Antilog10 ->
@@ -333,7 +332,7 @@ evaluate t = case t of
                   else
                     Right . forceSF dp . BD.fromString
                       . printf "%f"
-                      $ (10 :: Float) ** fromRational (toRational bd)
+                      $ (10 :: Float) ** realToFrac bd
           (SFConstant a) -> Left "taking the antilog of a constant is unsupported"
   where
     evaluateSubtrees :: [(a, SFTree)] -> Either Text [(a, SFTerm)]
