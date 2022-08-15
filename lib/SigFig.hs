@@ -52,8 +52,8 @@ niceShow (SFMeasured sf bd@(BigDecimal v s)) = format (BD.nf bd) <> " (" <> ssf 
                     else
                       if sf < p
                         then
-                          let coef = BigDecimal v $ s * 10 ^ (p - 1)
-                           in T.pack $ BD.toString coef <> "x 10^" <> show (p - 1)
+                          let coef = BD.nf . BigDecimal v $ s + (p - 1)
+                           in T.pack $ BD.toString coef <> " x 10^" <> show (p - 1)
                         else T.pack $ BD.toString bd
 niceShow (SFConstant v@(a :% b)) =
   T.pack $
