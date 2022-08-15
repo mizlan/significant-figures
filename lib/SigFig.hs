@@ -320,7 +320,6 @@ evaluate t = case t of
 -- negative return value is allowed and meaningful
 -- >>> significantDecPlaces 1 (BigDecimal 20 0)
 -- -1
-
 significantDecPlaces sf bd =
   let v' = BD.nf bd
       dec = BD.getScale v'
