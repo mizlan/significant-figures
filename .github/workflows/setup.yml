@@ -1,0 +1,17 @@
+on: [push]
+name: build
+jobs:
+  build:
+    name: Build for OSes
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        with:
+          ghc-version: '8.10.7' # Resolves to the latest point release of GHC 8.8
+          cabal-version: '3.6.2.0' # Exact version of Cabal
+      - run: cabal update
+      - run: cabal build
