@@ -3,7 +3,7 @@
 ## Supported Operations
 
 | Operation | Example | Output |
-| --- |
+| --- | --- | --- |
 | addition | `2.0 + 4.31` | `6.3` |
 | subtraction | `5.1 - 2` | `3` |
 | multiplication | `4.8 * 5.2` | `25` |
