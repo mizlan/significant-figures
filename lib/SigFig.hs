@@ -266,7 +266,6 @@ prec2Chain =
 btwnParens :: Parses a -> Parses a
 btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
 
-
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
 -- to the right of decimal place, negative means to the left
 --
@@ -375,5 +374,7 @@ textify (Left e) = Left . T.pack . show $ e
 parseEval :: Text -> Either Text SFTerm
 parseEval e = textify (parse fullExpr "" e) >>= evaluate
 
+-- | A convenience function for use in REPLs. Returns text that can either be a
+-- result or error.
 processExpression :: Text -> Text
 processExpression e = either ("Error:" <>) niceShow $ parseEval e
