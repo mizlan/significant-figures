@@ -54,9 +54,11 @@ niceShow (SFMeasured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
               T.pack (BD.toString term)
                 <> if sdp > s
                   then
-                    if s == 0
-                      then "." <> T.replicate (fromIntegral (sdp - s)) "0"
-                      else T.replicate (fromIntegral (sdp - s)) "0"
+                    ( if s == 0
+                        then "."
+                        else ""
+                    )
+                      <> T.replicate (fromIntegral (sdp - s)) "0"
                   else ""
             else
               let p = BD.precision term
