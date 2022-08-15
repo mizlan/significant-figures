@@ -3,11 +3,11 @@
 module Main where
 
 import Data.BigDecimal
+import Data.Either (isLeft)
 import Data.Ratio
 import SigFig
 import Test.Tasty
 import Test.Tasty.HUnit
-import Data.Either (isLeft)
 
 mkSFMeasured :: Integer -> Integer -> Integer -> SFTerm
 mkSFMeasured sf v s = SFMeasured sf (BigDecimal v s)
@@ -22,6 +22,7 @@ tests =
     [ singleTermTests,
       singleTermParenTests,
       singleConstantTests,
+      prettyPrintTests,
       constantOpTests,
       singleOpTests,
       orderOfOperations,
@@ -40,6 +41,28 @@ singleTermTests =
         parseEval "-5e7" @?= Right (mkSFMeasured 1 (-5) (-7)),
       testCase "parse sci-not float" $
         parseEval "5.24e-2" @?= Right (mkSFMeasured 3 524 4)
+    ]
+
+prettyPrintTests :: TestTree
+prettyPrintTests =
+  testGroup
+    "test niceShow"
+    [ testCase "prints 0 correctly" $
+        niceShow (SFMeasured 1 (BigDecimal 0 0)) @?= "0 (1 s.f.)",
+      testCase "prints trailing dot correctly" $ 
+        niceShow (SFMeasured 3 (BigDecimal 200 0)) @?= "200. (3 s.f.)",
+      testCase "prints trailing dot and zeroes correctly" $ 
+        niceShow (SFMeasured 3 (BigDecimal 4 0)) @?= "4.00 (3 s.f.)",
+      testCase "prints scinot correctly" $ 
+        niceShow (SFMeasured 2 (BigDecimal 400 0)) @?= "4.0 x 10^2 (2 s.f.)",
+      testCase "prints scinot correctly 2" $ 
+        niceShow (SFMeasured 2 (BigDecimal 430 0)) @?= "4.3 x 10^2 (2 s.f.)",
+      testCase "prints 1" $ 
+        niceShow (SFMeasured 1 (BigDecimal 1 0)) @?= "1 (1 s.f.)",
+      testCase "terminating const" $ 
+        niceShow (SFConstant (3 % 8)) @?= "0.375 (const)",
+      testCase "non-terminating const" $ 
+        niceShow (SFConstant (4 % 9)) @?= "4/9 (non-terminating const)"
     ]
 
 singleConstantTests :: TestTree
