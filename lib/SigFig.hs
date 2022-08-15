@@ -33,22 +33,25 @@ isMeasured (SFConstant _) = False
 -- >>> niceShow (SFMeasured 1 (BigDecimal 1 0))
 -- >>> niceShow (SFConstant (3 % 8))
 -- >>> niceShow (SFConstant (4 % 9))
+-- >>> niceShow (SFMeasured 2 (BigDecimal 43 1))
 -- "200. (3 s.f.)"
 -- "4.00 (3 s.f.)"
--- "4 x 10^2 (2 s.f.)"
+-- "4.0 x 10^2 (2 s.f.)"
 -- "4.3 x 10^2 (2 s.f.)"
 -- "1 (1 s.f.)"
 -- "0.375 (const)"
 -- "4/9 (non-terminating const)"
+-- "4.3 (2 s.f.)"
 niceShow :: SFTerm -> Text
-niceShow (SFMeasured sf bd@(BigDecimal v s)) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
+niceShow (SFMeasured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
   where
     ssf = T.pack $ show sf
-    format term =
-      let sdp = significantDecPlaces sf bd
+    format :: BigDecimal -> Text
+    format term@(BigDecimal v s) =
+      let sdp = significantDecPlaces sf term
        in if sdp > 0
             then
-              T.pack (BD.toString bd)
+              T.pack (BD.toString term)
                 <> if sdp > s
                   then
                     if s == 0
@@ -56,14 +59,16 @@ niceShow (SFMeasured sf bd@(BigDecimal v s)) = format (BD.nf bd) <> " (" <> ssf 
                       else T.replicate (fromIntegral (sdp - s)) "0"
                   else ""
             else
-              let p = BD.precision bd
-               in if sf == p && v `mod` 10 == 0
-                    then T.pack $ BD.toString bd <> "."
+              let p = BD.precision term
+               in if sf == p
+                    && v `mod` 10 == 0
+                    && v /= 0 -- print "0", not "0."
+                    then T.pack $ BD.toString term <> "."
                     else
                       if sf < p
                         then
                           let coef = BD.nf . BigDecimal v $ s + (p - 1)
-                           in T.pack $ BD.toString coef <> " x 10^" <> show (p - 1)
+                           in format coef <> " x 10^" <> T.pack (show (p - 1))
                         else T.pack $ BD.toString bd
 niceShow (SFConstant v@(a :% b)) =
   T.pack $
