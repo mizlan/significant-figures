@@ -57,7 +57,7 @@ toOp '*' = Mul
 toOp '/' = Div
 toOp _ = error "should be guarded by parser"
 
-data Function = Log10
+data Function = Log10 | Antilog10
   deriving (Show)
 
 data SFTree
@@ -150,13 +150,26 @@ exponentE = do
   when (i < 0) $ unexpected "negative exponent"
   return $ SFExp e i
 
-function :: Function -> Text -> Parses SFTree
-function func funcName = do
-  string $ T.unpack funcName
-  char '('
-  e <- expr
-  char ')'
-  pure $ SFFunction func e
+funcMap :: [(Function, Text)]
+funcMap =
+  [ (Log10, "log"),
+    (Antilog10, "exp")
+  ]
+
+genFuncParsers :: [Parses SFTree]
+genFuncParsers = do
+  (f, t) <- funcMap
+  pure $ do
+    string $ T.unpack t
+    char '('
+    e <- expr
+    char ')'
+    pure $ SFFunction f e
+
+--- >>> funcMap
+
+function :: Parses SFTree
+function = choice genFuncParsers
 
 expr :: Parses SFTree
 expr =
@@ -164,7 +177,7 @@ expr =
     <|> try prec2Chain
     <|> exponentE
     <|> try (btwnParens expr)
-    <|> try (function Log10 "log")
+    <|> try function
     <|> try leaf
 
 fullExpr :: Parses SFTree
@@ -174,11 +187,11 @@ fullExpr =
       try prec2Chain <* eof,
       exponentE <* eof,
       try (btwnParens expr) <* eof,
-      try (function Log10 "log") <* eof,
+      try function <* eof,
       leaf <* eof
     ]
 
--- generate chains: necessary because sigfig-simplification
+-- | generate chains: necessary because sigfig-simplification
 -- only occurs on completion of evaluation of such a chain
 precChain :: [Parses SFTree] -> Parses Char -> ([(Op, SFTree)] -> SFTree) -> Op -> Parses SFTree
 precChain validOperands validOperator constructor idOp =
@@ -200,7 +213,7 @@ precChain validOperands validOperator constructor idOp =
 prec1Chain :: Parses SFTree
 prec1Chain =
   precChain
-    [try prec2Chain, exponentE, try $ btwnParens expr, function Log10 "log", leaf]
+    [try prec2Chain, exponentE, try $ btwnParens expr, function, leaf]
     (oneOf "+-")
     SFPrec1
     Add
@@ -208,7 +221,7 @@ prec1Chain =
 prec2Chain :: Parses SFTree
 prec2Chain =
   precChain
-    [exponentE, try $ btwnParens expr, function Log10 "log", leaf]
+    [exponentE, try $ btwnParens expr, function, leaf]
     (oneOf "*/")
     SFPrec2
     Mul
@@ -216,7 +229,12 @@ prec2Chain =
 btwnParens :: Parses a -> Parses a
 btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
 
--- positive integer means to the right of decimal place, negative means to the left
+
+-- | Round a BigDecimal to a specified decimal place. A positive integer means
+-- to the right of decimal place, negative means to the left
+--
+-- >>> roundToPlace (BigDecimal 421 2) 1
+-- BigDecimal 42 1
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
   | dp > 0 = BD.roundBD bd $ BD.halfUp dp
@@ -237,6 +255,7 @@ evaluate t = case t of
             then Right $ SFConstant $ computeUnconstrained evaledSubs prec1Id
             else
               let s = computeUnconstrained evaledSubs prec1Id
+                  -- can be negative
                   minDP = minimum $ [significantDecPlaces sf bd | (_, SFMeasured sf bd) <- measured]
                in Right . forceDP minDP $ fromRational s
   (SFPrec2 xs) -> case xs of
@@ -258,15 +277,28 @@ evaluate t = case t of
       (SFConstant a) -> Right . SFConstant $ a ^ e
   (SFFunction f e) -> do
     res <- evaluate e
-    case res of
-      (SFMeasured sf bd) ->
-        Right . forceDP sf . BD.fromString
-          . printf "%f"
-          . logBase (10 :: Float)
-          . fromRational
-          . toRational
-          $ bd
-      (SFConstant a) -> Left "taking the log of a constant is unsupported"
+    case f of
+      Log10 ->
+        case res of
+          (SFMeasured sf bd) ->
+            Right . forceDP sf . BD.fromString
+              . printf "%f"
+              . logBase (10 :: Float)
+              . fromRational
+              . toRational
+              $ bd
+          (SFConstant a) -> Left "taking the log of a constant is unsupported"
+      Antilog10 ->
+        case res of
+          v@(SFMeasured sf bd) ->
+            let dp = significantDecPlaces sf bd
+             in if dp <= 0
+                  then Left $ niceShow v <> " has 0 significant decimal places so exp(" <> niceShow v <> ") is undefined"
+                  else
+                    Right . forceSF dp . BD.fromString
+                      . printf "%f"
+                      $ (10 :: Float) ** fromRational (toRational bd)
+          (SFConstant a) -> Left "taking the antilog of a constant is unsupported"
   where
     evaluateSubtrees :: [(a, SFTree)] -> Either Text [(a, SFTerm)]
     evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs
@@ -283,12 +315,17 @@ evaluate t = case t of
     doOpConstant Sub a b = a - b
     doOpConstant Mul a b = a * b
     doOpConstant Div a b = a / b
-    significantDecPlaces sf bd =
-      let v' = BD.nf bd
-          dec = BD.getScale v'
-          nd = BD.precision v'
-       in sf + dec - nd
     forceSF sf' bd = SFMeasured sf' $ roundToPlace bd $ significantDecPlaces sf' bd
+
+-- negative return value is allowed and meaningful
+-- >>> significantDecPlaces 1 (BigDecimal 20 0)
+-- -1
+
+significantDecPlaces sf bd =
+  let v' = BD.nf bd
+      dec = BD.getScale v'
+      nd = BD.precision v'
+   in sf + dec - nd
 
 forceDP :: Integer -> BigDecimal -> SFTerm
 forceDP dp bd =
@@ -301,11 +338,6 @@ textify (Left e) = Left . T.pack . show $ e
 
 parseEval :: Text -> Either Text SFTerm
 parseEval e = textify (parse fullExpr "" e) >>= evaluate
-
--- maybeParseEval :: Text -> Maybe SFTerm
--- maybeParseEval e = case parse fullExpr "" e of
---   Right m -> Just $ evaluate m
---   Left _ -> Nothing
 
 processExpression :: Text -> Text
 processExpression e = either ("Error:" <>) niceShow $ parseEval e
