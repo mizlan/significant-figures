@@ -1,7 +1,5 @@
 # Significant Figures
 
-![demo with some operations](./assets/demo.png)
-
 ## supports
 
 * addition
