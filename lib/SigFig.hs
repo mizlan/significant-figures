@@ -26,8 +26,35 @@ data SFTerm
 isMeasured (SFMeasured _ _) = True
 isMeasured (SFConstant _) = False
 
+-- >>> niceShow (SFMeasured 3 (BigDecimal 200 0))
+-- "200. (3 s.f.)"
+-- >>> niceShow (SFMeasured 5 (BigDecimal 21 1))
+-- "2.10 (3 s.f.)"
 niceShow :: SFTerm -> Text
-niceShow (SFMeasured sf bd) = T.pack $ BD.toString bd ++ " (" ++ show sf ++ " s.f.)"
+niceShow (SFMeasured sf bd@(BigDecimal v s)) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
+  where
+    ssf = T.pack $ show sf
+    format term =
+      let sdp = significantDecPlaces sf bd
+       in if sdp > 0
+            then
+              T.pack (BD.toString bd)
+                <> if sdp > s
+                  then
+                    if s == 0
+                      then "." <> T.replicate (fromIntegral (sdp - s)) "0"
+                      else T.replicate (fromIntegral (sdp - s)) "0"
+                  else ""
+            else
+              let p = BD.precision bd
+               in if sf == p && v `mod` 10 == 0
+                    then T.pack $ BD.toString bd <> "."
+                    else
+                      if sf < p
+                        then
+                          let coef = BigDecimal v $ s * 10 ^ (p - 1)
+                           in T.pack $ BD.toString coef <> "x 10^" <> show (p - 1)
+                        else T.pack $ BD.toString bd
 niceShow (SFConstant v@(a :% b)) =
   T.pack $
     if isTerminating b
