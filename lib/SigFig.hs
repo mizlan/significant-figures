@@ -208,8 +208,6 @@ genFuncParsers = do
     char ')'
     pure $ SFFunction f e
 
---- >>> funcMap
-
 function :: Parses SFTree
 function = choice genFuncParsers
 
