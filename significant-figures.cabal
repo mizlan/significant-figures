@@ -3,7 +3,7 @@ name:               significant-figures
 version:            0.1.0.0
 synopsis:           Calculate expressions involving significant figures.
 bug-reports:        https://github.com/mizlan/significant-figures/issues
-license:            GPLv3
+license:            GPL-3.0-or-later
 license-file:       LICENSE
 author:             Michael Lan
 maintainer:         michaellan202@gmail.com
