@@ -27,9 +27,19 @@ isMeasured (SFMeasured _ _) = True
 isMeasured (SFConstant _) = False
 
 -- >>> niceShow (SFMeasured 3 (BigDecimal 200 0))
+-- >>> niceShow (SFMeasured 3 (BigDecimal 4 0))
+-- >>> niceShow (SFMeasured 2 (BigDecimal 400 0))
+-- >>> niceShow (SFMeasured 2 (BigDecimal 430 0))
+-- >>> niceShow (SFMeasured 1 (BigDecimal 1 0))
+-- >>> niceShow (SFConstant (3 % 8))
+-- >>> niceShow (SFConstant (4 % 9))
 -- "200. (3 s.f.)"
--- >>> niceShow (SFMeasured 5 (BigDecimal 21 1))
--- "2.10 (3 s.f.)"
+-- "4.00 (3 s.f.)"
+-- "4 x 10^2 (2 s.f.)"
+-- "4.3 x 10^2 (2 s.f.)"
+-- "1 (1 s.f.)"
+-- "0.375 (const)"
+-- "4/9 (non-terminating const)"
 niceShow :: SFTerm -> Text
 niceShow (SFMeasured sf bd@(BigDecimal v s)) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
   where
