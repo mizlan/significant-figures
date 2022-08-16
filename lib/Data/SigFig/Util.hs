@@ -14,18 +14,18 @@ isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
 
 -- negative return value is allowed and meaningful
--- >>> significantDecPlaces 1 (BigDecimal 20 0)
+-- >>> rightmostSignificantPlace 1 (BigDecimal 20 0)
 -- -1
-significantDecPlaces sf bd =
+rightmostSignificantPlace sf bd =
   let v' = BD.nf bd
-      dec = BD.getScale v'
+      dp = BD.getScale v'
       nd = BD.precision v'
-   in sf + dec - nd
+   in sf + dp - nd
 
 forceDP :: Integer -> BigDecimal -> Term
 forceDP dp bd =
   let res = BD.nf $ roundToPlace bd dp
-   in Measured (BD.precision res - BD.getScale res + dp) res
+   in Measured (BD.precision res - BD.getScale res - dp) res
 
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
 -- to the right of decimal place, negative means to the left
@@ -34,10 +34,10 @@ forceDP dp bd =
 -- BigDecimal 42 1
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
-  | dp > 0 = BD.roundBD bd $ BD.halfUp dp
+  | dp < 0 = BD.roundBD bd $ BD.halfUp (-dp)
   | otherwise =
-    let bd' = BigDecimal v (s - dp)
-     in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
+    let bd' = BigDecimal v (s + dp)
+     in BD.roundBD bd' (BD.halfUp 0) * 10 ^ dp
 
 -- >>> display (Measured 3 (BigDecimal 200 0))
 -- >>> display (Measured 3 (BigDecimal 4 0))
