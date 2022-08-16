@@ -62,16 +62,19 @@ niceShow (SFMeasured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
                   else ""
             else
               let p = BD.precision term
-               in if sf == p
-                    && v `mod` 10 == 0
-                    && v /= 0 -- print "0", not "0."
-                    then T.pack $ BD.toString term <> "."
+               in if v `mod` (10 ^ (p - sf)) == 0 && v `mod` (10 ^ (p - sf + 1)) /= 0
+                    then T.pack (BD.toString bd)
                     else
-                      if sf < p
-                        then
-                          let coef = BD.nf . BigDecimal v $ s + (p - 1)
-                           in format coef <> " x 10^" <> T.pack (show (p - 1))
-                        else T.pack $ BD.toString bd
+                      if sf == p
+                        && v `mod` 10 == 0
+                        && v /= 0 -- print "0", not "0."
+                        then T.pack $ BD.toString term <> "."
+                        else
+                          if sf < p
+                            then
+                              let coef = BD.nf . BigDecimal v $ s + (p - 1)
+                               in format coef <> " x 10^" <> T.pack (show (p - 1))
+                            else T.pack $ BD.toString bd
 niceShow (SFConstant v@(a :% b)) =
   T.pack $
     if isTerminating b
