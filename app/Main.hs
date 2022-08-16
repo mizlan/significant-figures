@@ -1,6 +1,6 @@
 module Main where
 
-import SigFig (processExpression)
+import Data.SigFig (processExpression)
 import System.Console.Haskeline
 import qualified Data.Text as T
 
