@@ -36,10 +36,6 @@ jobs:
       - run: cabal update
       - run: cabal build -O2
       - run: ls -R
-      - run: ls dist-newstyle
-      - run: ls dist-newstyle/**
-      - run: ls significant-figures
-      - run: ls significant-figures/**
       - uses: actions/upload-artifact@v3
         with:
           name: build-artifact-${{ matrix.os }}
