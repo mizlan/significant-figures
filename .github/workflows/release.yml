@@ -1,0 +1,24 @@
+on: workflow_dispatch
+name: release
+jobs:
+  release:
+    name: Release for OSes
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        with:
+          ghc-version: '8.10.7'
+          cabal-version: '3.6.2.0'
+      - run: cabal update
+      - run: cabal build -O2
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact-${{ matrix.os }}
+          path: ./dist-newstyle/build/**/significant-figures-0.1.0.0/x/**/build/significant-figures/significant-figures
+
+
+
