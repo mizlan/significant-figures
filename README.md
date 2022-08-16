@@ -32,3 +32,16 @@ end of a sequence of similar operations**; i.e., rounding to least decimal
 place only occurs after all addition/subtraction operations in a row are
 computed. Internally, this is done by parsing such runs as a list of operands
 and associated operations instead of treating operators as binary.
+
+## Reminders
+
+- Functions that return irrational numbers do not work when given a constant
+  value as input, since constants are represented internally as rationals, and
+  therefore the essence of a "constant" in the context of significant figures
+  (i.e., "infinite" significant figures") cannot be guaranteed. Since using a
+  symbolic math engine is complete overkill for such a calculator, we limit the
+  domain of these functions. **NOTE:** This doesn't mean you can't use
+  constants within the argument expression, it just means the expression must
+  not _evaluate_ to a constant. For example, with the `log()` function,
+  `log(45c + 2)` (`log(47)`) is perfectly fine, but `log(45c + 2c)` (`log(47c)`)
+  is not.
