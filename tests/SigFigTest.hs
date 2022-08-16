@@ -5,8 +5,7 @@ module Main where
 import Data.BigDecimal
 import Data.Either (isLeft)
 import Data.Ratio
-import Data.SigFig.Interface
-import Data.SigFig.Types
+import Data.SigFig
 import Data.SigFig.Util
 import Test.Tasty
 import Test.Tasty.HUnit
