@@ -61,7 +61,7 @@ display (Measured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
     format term@(BigDecimal v s) =
-      let sdp = significantDecPlaces sf term
+      let sdp = negate $ rightmostSignificantPlace sf term
        in if sdp > 0
             then
               T.pack (BD.toString term)
