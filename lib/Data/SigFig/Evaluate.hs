@@ -25,8 +25,8 @@ evaluate (Prec1 xs) = case xs of
           then Right $ Constant $ computeUnconstrained evaledSubs 0
           else
             let s = computeUnconstrained evaledSubs 0
-                -- can be negative
-                minDP = minimum $ [significantDecPlaces sf bd | (_, Measured sf bd) <- measured]
+                -- can be positive/negative
+                minDP = maximum $ [rightmostSignificantPlace sf bd | (_, Measured sf bd) <- measured]
              in Right . forceDP minDP $ fromRational s
 evaluate (Prec2 xs) = case xs of
   [] -> Left "should not happen"
@@ -59,7 +59,7 @@ evaluate (Apply Antilog10 e) = do
   res <- evaluate e
   case res of
     v@(Measured sf bd) ->
-      let dp = significantDecPlaces sf bd
+      let dp = negate $ rightmostSignificantPlace sf bd
        in if dp <= 0
             then Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
             else
@@ -82,7 +82,7 @@ doOp Mul a b = a * b
 doOp Div a b = a / b
 
 forceSF :: Integer -> BigDecimal -> Term
-forceSF sf' bd = Measured sf' $ roundToPlace bd $ significantDecPlaces sf' bd
+forceSF sf' bd = Measured sf' $ roundToPlace bd $ negate $ rightmostSignificantPlace sf' bd
 
 evaluateSubtrees :: [(a, Expr)] -> Either Text [(a, Term)]
 evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs
