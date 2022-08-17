@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 
 module Main where
 
@@ -9,6 +10,8 @@ import Data.SigFig
 import Data.SigFig.Util
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Text (Text)
+import Data.Text qualified as T
 
 mkMeasured :: Integer -> Integer -> Integer -> Term
 mkMeasured sf v s = Measured sf (BigDecimal v s)
@@ -29,6 +32,14 @@ tests =
       orderOfOperations,
       complexExpressions
     ]
+
+-- >>> verbatim
+
+-- | Cheese testing by copypasting from repl
+verbatim :: TestName -> Text -> Text -> TestTree
+verbatim name inputLine outputLine = testCase name $ case T.stripPrefix "expr> " inputLine of
+  Nothing -> assertFailure "incorrect format to verbatim"
+  Just e -> processExpression e @?= outputLine
 
 singleTermTests :: TestTree
 singleTermTests =
