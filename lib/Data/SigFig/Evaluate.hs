@@ -49,7 +49,7 @@ evaluate (Apply Log10 e) = do
   res <- evaluate e
   case res of
     (Measured sf bd) ->
-      Right . forceDP sf . BD.fromString
+      Right . forceDP (negate sf) . BD.fromString
         . printf "%f"
         . logBase (10 :: Float)
         . realToFrac
@@ -60,10 +60,10 @@ evaluate (Apply Antilog10 e) = do
   case res of
     v@(Measured sf bd) ->
       let dp = negate $ rightmostSignificantPlace sf bd
-       in if dp <= 0
+       in if dp > 0
             then Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
             else
-              Right . forceSF dp . BD.fromString
+              Right . forceSF (negate dp) . BD.fromString
                 . printf "%f"
                 $ (10 :: Float) ** realToFrac bd
     (Constant a) -> Left "taking the antilog of a constant is unsupported"
@@ -82,7 +82,7 @@ doOp Mul a b = a * b
 doOp Div a b = a / b
 
 forceSF :: Integer -> BigDecimal -> Term
-forceSF sf' bd = Measured sf' $ roundToPlace bd $ negate $ rightmostSignificantPlace sf' bd
+forceSF sf' bd = Measured sf' . roundToPlace bd . rightmostSignificantPlace sf' $ bd
 
 evaluateSubtrees :: [(a, Expr)] -> Either Text [(a, Term)]
 evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs
