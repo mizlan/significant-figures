@@ -14,30 +14,30 @@ isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
 
 -- negative return value is allowed and meaningful
--- >>> significantDecPlaces 1 (BigDecimal 20 0)
+-- >>> rightmostSignificantPlace 2 (BigDecimal 42 1)
 -- -1
-significantDecPlaces sf bd =
+rightmostSignificantPlace :: Integer -> BigDecimal -> Integer
+rightmostSignificantPlace sf bd =
   let v' = BD.nf bd
-      dec = BD.getScale v'
-      nd = BD.precision v'
-   in sf + dec - nd
+      dp = BD.getScale v'
+      p = BD.precision v'
+   in p - sf - dp
 
 forceDP :: Integer -> BigDecimal -> Term
 forceDP dp bd =
   let res = BD.nf $ roundToPlace bd dp
-   in Measured (BD.precision res - BD.getScale res + dp) res
+   in Measured (BD.precision res - BD.getScale res - dp) res
 
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
--- to the right of decimal place, negative means to the left
+-- to the left of decimal place, negative means to the right
 --
--- >>> roundToPlace (BigDecimal 421 2) 1
--- BigDecimal 42 1
+-- >>> roundToPlace (BigDecimal 421 1) (0)
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
-  | dp > 0 = BD.roundBD bd $ BD.halfUp dp
+  | dp < 0 = BD.roundBD bd $ BD.halfUp (- dp)
   | otherwise =
-    let bd' = BigDecimal v (s - dp)
-     in BD.roundBD bd' (BD.halfUp 0) * 10 ^ (- dp)
+    let bd' = BigDecimal v (s + dp)
+     in BD.roundBD bd' (BD.halfUp 0) * 10 ^ dp
 
 -- >>> display (Measured 3 (BigDecimal 200 0))
 -- >>> display (Measured 3 (BigDecimal 4 0))
@@ -50,44 +50,31 @@ roundToPlace bd@(BigDecimal v s) dp
 -- "200. (3 s.f.)"
 -- "4.00 (3 s.f.)"
 -- "4.0 x 10^2 (2 s.f.)"
--- "4.3 x 10^2 (2 s.f.)"
+-- "430 (2 s.f.)"
 -- "1 (1 s.f.)"
 -- "0.375 (const)"
 -- "4/9 (non-terminating const)"
 -- "4.3 (2 s.f.)"
 display :: Term -> Text
-display (Measured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
+display (Measured sf bd) = format bd <> " (" <> ssf <> " s.f.)"
   where
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
-    format term@(BigDecimal v s) =
-      let sdp = significantDecPlaces sf term
-       in if sdp > 0
-            then
-              T.pack (BD.toString term)
-                <> if sdp > s
-                  then
-                    ( if s == 0
-                        then "."
-                        else ""
-                    )
-                      <> T.replicate (fromIntegral (sdp - s)) "0"
-                  else ""
+    format term' =
+      let term@(BigDecimal v s) = BD.nf term'
+          termText = T.pack . BD.toString $ term
+          p = BD.precision term
+          rsdp = p - sf - s
+          rsd = if sf > p then 0 else v `div` (10 ^ (rsdp + s)) `mod` 10
+       in if rsd /= 0 || rsdp == 0 && p == 1
+            then termText
             else
-              let p = BD.precision term
-               in if v `mod` (10 ^ (p - sf)) == 0 && v `mod` (10 ^ (p - sf + 1)) /= 0
-                    then T.pack (BD.toString bd)
-                    else
-                      if sf == p
-                        && v `mod` 10 == 0
-                        && v /= 0 -- print "0", not "0."
-                        then T.pack $ BD.toString term <> "."
-                        else
-                          if sf < p
-                            then
-                              let coef = BD.nf . BigDecimal v $ s + (p - 1)
-                               in format coef <> " x 10^" <> T.pack (show (p - 1))
-                            else T.pack $ BD.toString bd
+              if rsdp >= 1
+                then let coef = BigDecimal v (s + (p - 1)) in format coef <> " x 10^" <> T.pack (show $ p - 1)
+                else
+                  termText
+                    <> (if s > 0 then "" else ".")
+                    <> T.replicate (fromIntegral $ sf - p) "0"
 display (Constant v@(a :% b)) =
   T.pack $
     if isTerminating b
@@ -99,3 +86,18 @@ display (Constant v@(a :% b)) =
         stripFactor d n = case n `quotRem` d of
           (q, 0) -> stripFactor d q
           _ -> n
+
+{-
+
+process:
+  1. find rightmost significant digit -> x
+  2. if x /= 0, just print as-is
+  3. if x is in 10s/100s/1000s place etc., convert to sci not
+  4. if x in 10ths/100ths/1000ths etc, add decimal place if needed and zeroes
+
+- as-is
+  - in integer, rightmost significant figure is nonzero
+- add a "." if needed and zero or more trailing zeroes
+-
+
+-}
