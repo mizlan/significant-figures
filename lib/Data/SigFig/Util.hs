@@ -14,13 +14,14 @@ isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
 
 -- negative return value is allowed and meaningful
--- >>> rightmostSignificantPlace 1 (BigDecimal 20 0)
+-- >>> rightmostSignificantPlace 2 (BigDecimal 42 1)
 -- -1
+rightmostSignificantPlace :: Integer -> BigDecimal -> Integer
 rightmostSignificantPlace sf bd =
   let v' = BD.nf bd
       dp = BD.getScale v'
-      nd = BD.precision v'
-   in sf + dp - nd
+      p = BD.precision v'
+   in p - sf - dp
 
 forceDP :: Integer -> BigDecimal -> Term
 forceDP dp bd =
@@ -28,13 +29,12 @@ forceDP dp bd =
    in Measured (BD.precision res - BD.getScale res - dp) res
 
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
--- to the right of decimal place, negative means to the left
+-- to the left of decimal place, negative means to the right
 --
--- >>> roundToPlace (BigDecimal 421 2) 1
--- BigDecimal 42 1
+-- >>> roundToPlace (BigDecimal 421 1) (0)
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
-  | dp < 0 = BD.roundBD bd $ BD.halfUp (-dp)
+  | dp < 0 = BD.roundBD bd $ BD.halfUp (- dp)
   | otherwise =
     let bd' = BigDecimal v (s + dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ dp
@@ -86,3 +86,18 @@ display (Constant v@(a :% b)) =
         stripFactor d n = case n `quotRem` d of
           (q, 0) -> stripFactor d q
           _ -> n
+
+{-
+
+process:
+  1. find rightmost significant digit -> x
+  2. if x /= 0, just print as-is
+  3. if x is in 10s/100s/1000s place etc., convert to sci not
+  4. if x in 10ths/100ths/1000ths etc, add decimal place if needed and zeroes
+
+- as-is
+  - in integer, rightmost significant figure is nonzero
+- add a "." if needed and zero or more trailing zeroes
+-
+
+-}
