@@ -21,17 +21,3 @@ jobs:
           restore-keys: |
             cabal-store-${{ runner.os }}-
       - run: cabal build -O2 exe:significant-figures-api
-      - run: mv dist-newstyle/build/x86_64-linux/ghc-8.10.7/significant-figures-0.1.0.0/x/significant-figures-api/opt/build/significant-figures-api/significant-figures-api sigfig-api
-      - run: |
-         mkdir -p /heroku-repo
-         cp sigfig-api /heroku-repo
-         cp Procfile /heroku-repo
-         cd /heroku-repo
-
-         git init
-         git config user.email "${{ secrets.GIT_EMAIL }}"
-         git config user.name "${{ secrets.GIT_NAME }}"
-         git add .
-         git commit -m "deploying"
-
-         git push -f "${{ secrets.HEROKU_APP_GIT_URL }}" HEAD:main
