@@ -1,0 +1,27 @@
+on: workflow_dispatch
+name: deploy-heroku
+jobs:
+  deploy:
+    name: Deploy to Heroku
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        with:
+          ghc-version: '8.10.7'
+          cabal-version: '3.6.2.0'
+      - run: cabal build -O2
+      - run: mv dist-newstyle/build/**/x/**/build/significant-figures-api/significant-figures-api sigfig-api
+      - run: |
+         mkdir -p /heroku-repo
+         cp sigfig-api /heroku-repo
+         cp Procfile /heroku-repo
+         cd /heroku-repo
+
+         git init
+         git config user.email "${{ secrets.GIT_EMAIL }}"
+         git config user.name "${{ secrets.GIT_NAME }}"
+         git add .
+         git commit -m "deploying"
+
+         git push -f "${{ secrets.HEROKU_APP_GIT_URL }}" HEAD:main
