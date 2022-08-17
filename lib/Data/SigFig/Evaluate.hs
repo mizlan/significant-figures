@@ -59,8 +59,8 @@ evaluate (Apply Antilog10 e) = do
   res <- evaluate e
   case res of
     v@(Measured sf bd) ->
-      let dp = negate $ rightmostSignificantPlace sf bd
-       in if dp > 0
+      let dp = rightmostSignificantPlace sf bd
+       in if dp >= 0
             then Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
             else
               Right . forceSF (negate dp) . BD.fromString
