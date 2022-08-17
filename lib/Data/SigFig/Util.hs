@@ -56,7 +56,7 @@ roundToPlace bd@(BigDecimal v s) dp
 -- "4/9 (non-terminating const)"
 -- "4.3 (2 s.f.)"
 display :: Term -> Text
-display (Measured sf bd) = format bd <> " (" <> ssf <> " s.f.)"
+display (Measured sf bd) = format bd
   where
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
@@ -78,14 +78,24 @@ display (Measured sf bd) = format bd <> " (" <> ssf <> " s.f.)"
 display (Constant v@(a :% b)) =
   T.pack $
     if isTerminating b
-      then (BD.toString . BD.nf . fromRational $ v) ++ " (const)"
-      else show a ++ "/" ++ show b ++ " (non-terminating const)"
+      then BD.toString . BD.nf . fromRational $ v
+      else show a ++ "/" ++ show b
+
+
+displayFull :: Term -> Text
+displayFull t@(Measured sf bd) = display t <> annot
+  where annot = " (" <> T.pack (show sf) <> " s.f.)"
+displayFull t@(Constant (a :% b)) = display t <> annot
   where
-    isTerminating = (== 1) . stripFactor 5 . stripFactor 2
-      where
-        stripFactor d n = case n `quotRem` d of
-          (q, 0) -> stripFactor d q
-          _ -> n
+    annot = if isTerminating b then " (const)" else " (non-terminating const)"
+
+-- | Given a denominator, tell if the decimal expansion of the fraction terminates
+isTerminating :: Integer -> Bool
+isTerminating = (== 1) . stripFactor 5 . stripFactor 2
+  where
+    stripFactor d n = case n `quotRem` d of
+      (q, 0) -> stripFactor d q
+      _ -> n
 
 {-
 
