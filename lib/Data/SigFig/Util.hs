@@ -50,44 +50,31 @@ roundToPlace bd@(BigDecimal v s) dp
 -- "200. (3 s.f.)"
 -- "4.00 (3 s.f.)"
 -- "4.0 x 10^2 (2 s.f.)"
--- "4.3 x 10^2 (2 s.f.)"
+-- "430 (2 s.f.)"
 -- "1 (1 s.f.)"
 -- "0.375 (const)"
 -- "4/9 (non-terminating const)"
 -- "4.3 (2 s.f.)"
 display :: Term -> Text
-display (Measured sf bd) = format (BD.nf bd) <> " (" <> ssf <> " s.f.)"
+display (Measured sf bd) = format bd <> " (" <> ssf <> " s.f.)"
   where
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
-    format term@(BigDecimal v s) =
-      let sdp = negate $ rightmostSignificantPlace sf term
-       in if sdp > 0
-            then
-              T.pack (BD.toString term)
-                <> if sdp > s
-                  then
-                    ( if s == 0
-                        then "."
-                        else ""
-                    )
-                      <> T.replicate (fromIntegral (sdp - s)) "0"
-                  else ""
+    format term' =
+      let term@(BigDecimal v s) = BD.nf term'
+          termText = T.pack . BD.toString $ term
+          p = BD.precision term
+          rsdp = p - sf - s
+          rsd = if sf > p then 0 else v `div` (10 ^ (rsdp + s)) `mod` 10
+       in if rsd /= 0 || rsdp == 0 && p == 1
+            then termText
             else
-              let p = BD.precision term
-               in if v `mod` (10 ^ (p - sf)) == 0 && v `mod` (10 ^ (p - sf + 1)) /= 0
-                    then T.pack (BD.toString bd)
-                    else
-                      if sf == p
-                        && v `mod` 10 == 0
-                        && v /= 0 -- print "0", not "0."
-                        then T.pack $ BD.toString term <> "."
-                        else
-                          if sf < p
-                            then
-                              let coef = BD.nf . BigDecimal v $ s + (p - 1)
-                               in format coef <> " x 10^" <> T.pack (show (p - 1))
-                            else T.pack $ BD.toString bd
+              if rsdp >= 1
+                then let coef = BigDecimal v (s + (p - 1)) in format coef <> " x 10^" <> T.pack (show $ p - 1)
+                else
+                  termText
+                    <> (if s > 0 then "" else ".")
+                    <> T.replicate (fromIntegral $ sf - p) "0"
 display (Constant v@(a :% b)) =
   T.pack $
     if isTerminating b
