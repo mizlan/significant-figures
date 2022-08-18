@@ -10,8 +10,8 @@ import Data.Text.Lazy qualified as L
 import Language.Javascript.JMacro
 
 -- lol
-frontpageJS :: L.Text
-frontpageJS = L.pack . show $ renderJs [jmacro|
+frontpageJS :: JStat
+frontpageJS = [jmacro|
   fun evaluate expr ->
     fetch('/calc', {
       method: 'POST',
