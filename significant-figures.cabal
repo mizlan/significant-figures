@@ -49,13 +49,15 @@ executable significant-figures-api
   main-is:          Main.hs
   other-modules:    Site
                    ,Site.JS
+                   ,Site.CSS
   build-depends:    base ^>=4.14.3.0
                    ,text
                    ,aeson
                    ,blaze-html
                    ,Spock
                    ,http-api-data
-                   ,jmacro
+                   ,jmacro ==0.6.17.1
+                   ,clay
                    ,significant-figures
 
 test-suite significant-figures-test
