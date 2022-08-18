@@ -48,11 +48,14 @@ executable significant-figures-api
   hs-source-dirs:   web
   main-is:          Main.hs
   other-modules:    Site
+                   ,Site.JS
   build-depends:    base ^>=4.14.3.0
                    ,text
                    ,aeson
                    ,blaze-html
                    ,Spock
+                   ,http-api-data
+                   ,jmacro
                    ,significant-figures
 
 test-suite significant-figures-test
