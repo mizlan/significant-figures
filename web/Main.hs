@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -8,9 +9,13 @@ import Control.Exception (IOException, catch)
 import Data.Aeson hiding (json)
 import Data.SigFig
 import Data.Text (Text, pack)
+import Data.Text.Lazy (toStrict)
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (Text))
+import Site
 import System.Environment (getEnv)
+import Text.Blaze.Html.Renderer.Text qualified as R
+import Text.Blaze.Html5 qualified as H
 import Text.Read (readMaybe)
 import Web.Spock
 import Web.Spock.Config
@@ -39,7 +44,9 @@ instance FromJSON CalculationRequest
 
 app :: Api
 app = do
-  post "calc" do
+  get root do
+    html . toStrict $ R.renderHtml frontPage
+  getpost "calc" do
     (CalculationRequest e) <- jsonBody' :: ApiAction CalculationRequest
     json $ case parseEval e of
       Right t -> Calculation True (display t) $ case t of
