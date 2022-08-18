@@ -21,4 +21,4 @@ parseEval e = textify (parse fullExpr "" e) >>= evaluate
 -- | A convenience function for use in REPLs. Returns text that can either be a
 -- result or error.
 processExpression :: Text -> Text
-processExpression e = either ("Error: " <>) display $ parseEval e
+processExpression e = either ("Error: " <>) displayFull $ parseEval e
