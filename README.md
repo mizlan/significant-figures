@@ -72,6 +72,7 @@ expr> 0.650 * 4000.
   figures. The below doesn't feel right to me:
 
   `exp(000.0) = 10 ^ (100c * 0.000) = 1`
+
   `exp(0.000) = 10 ^ (  1c * 0.000) = 1.00`
 
   I may work on a patch for this if I think it necessary. This will involve
@@ -82,3 +83,7 @@ expr> 0.650 * 4000.
   have chosen to retain the number of significant figures for 0-values, such
   that they work as expected in larger expressions. Also, this is an incredibly
   niche case that should not ever appear in well-designed lab procedures.
+
+  TL;DR: How zeroes work is pretty controversial but it should work the way
+  you'd expect them to intuitively (I asked other people how they'd expect
+  zeroes to work and it was the way it currently is).
