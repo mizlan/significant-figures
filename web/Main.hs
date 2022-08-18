@@ -50,7 +50,7 @@ app = do
 main :: IO ()
 main = do
   cfg <- defaultSpockCfg () PCNoDatabase ()
-  portStr <- catch (getEnv "PORT") (const $ pure "8080" :: IOException -> IO String)
+  portStr <- getEnv "PORT" `catch` (const $ pure "8080" :: IOException -> IO String)
   case readMaybe portStr of
     Nothing -> print "PORT is not a valid number"
     Just port -> runSpock port $ spock cfg app
