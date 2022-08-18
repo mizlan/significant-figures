@@ -1,5 +1,10 @@
 # Significant Figures
 
+The `Data.SigFig` module will be published to Hackage at some point. For
+personal use, there is an [→ frontend and
+API](https://significant-figures.herokuapp.com) and a CLI
+(`exe:significant-figures-cli`).
+
 ## Supported Operations
 
 | Operation | Example | Output |
