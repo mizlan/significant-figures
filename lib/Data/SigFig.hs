@@ -4,6 +4,7 @@ module Data.SigFig (
   processExpression,
   parseEval,
   display,
+  displayFull,
   evaluate,
   module Data.SigFig.Types
 ) where
