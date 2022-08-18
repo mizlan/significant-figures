@@ -58,25 +58,25 @@ singleTermTests =
 prettyPrintTests :: TestTree
 prettyPrintTests =
   testGroup
-    "test display"
+    "test displayFull"
     [ testCase "prints 0 correctly" $
-        display (Measured 1 (BigDecimal 0 0)) @?= "0 (1 s.f.)",
+        displayFull (Measured 1 (BigDecimal 0 0)) @?= "0 (1 s.f.)",
       testCase "prints trailing dot correctly" $
-        display (Measured 3 (BigDecimal 200 0)) @?= "200. (3 s.f.)",
+        displayFull (Measured 3 (BigDecimal 200 0)) @?= "200. (3 s.f.)",
       testCase "prints trailing dot and zeroes correctly" $
-        display (Measured 3 (BigDecimal 4 0)) @?= "4.00 (3 s.f.)",
+        displayFull (Measured 3 (BigDecimal 4 0)) @?= "4.00 (3 s.f.)",
       testCase "prints scinot correctly" $
-        display (Measured 2 (BigDecimal 400 0)) @?= "4.0 x 10^2 (2 s.f.)",
+        displayFull (Measured 2 (BigDecimal 400 0)) @?= "4.0 x 10^2 (2 s.f.)",
       testCase "prints scinot correctly 2" $
-        display (Measured 2 (BigDecimal 430 0)) @?= "430 (2 s.f.)",
+        displayFull (Measured 2 (BigDecimal 430 0)) @?= "430 (2 s.f.)",
       testCase "prints 1" $
-        display (Measured 1 (BigDecimal 1 0)) @?= "1 (1 s.f.)",
+        displayFull (Measured 1 (BigDecimal 1 0)) @?= "1 (1 s.f.)",
       testCase "terminating const" $
-        display (Constant (3 % 8)) @?= "0.375 (const)",
+        displayFull (Constant (3 % 8)) @?= "0.375 (const)",
       testCase "non-terminating const" $
-        display (Constant (4 % 9)) @?= "4/9 (non-terminating const)",
+        displayFull (Constant (4 % 9)) @?= "4/9 (non-terminating const)",
       testCase "non-terminating const" $
-        display (mkMeasured 1 60 0) @?= "60 (1 s.f.)"
+        displayFull (mkMeasured 1 60 0) @?= "60 (1 s.f.)"
     ]
 
 singleConstantTests :: TestTree
