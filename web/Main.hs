@@ -24,6 +24,9 @@ import Web.Internal.HttpApiData
 import Web.Spock
 import Web.Spock.Config
 import Site.JS (frontpageJS)
+import Site.CSS (styles)
+import Language.Javascript.JMacro (renderJs)
+import Clay (render)
 
 type Api = SpockM () () () ()
 
@@ -56,10 +59,10 @@ app = do
     html . L.toStrict $ R.renderHtml frontPage
   get "public/index.js" do
     setHeader "Content-Type" "application/javascript"
-    lazyBytes $ L.encodeUtf8 frontpageJS
+    lazyBytes . L.encodeUtf8 . L.pack . show . renderJs $ frontpageJS
   get "public/styles.css" do
     setHeader "Content-Type" "text/css"
-    lazyBytes $ L.encodeUtf8 styles
+    lazyBytes . L.encodeUtf8 . render $ styles
   get "calc" do
     (CalculationRequest e) <- param' "expr" :: ApiAction CalculationRequest
     json $ case parseEval e of
