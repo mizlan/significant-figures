@@ -48,8 +48,8 @@ evaluate (Apply Log10 e) = do
   res <- evaluate e
   case res of
     v@(Measured sf bd) ->
-      if bd < 0
-        then Left $ "cannot evaluate log(" <> display v <> "), argument is negative"
+      if bd <= 0
+        then Left $ "cannot evaluate log(" <> display v <> "), argument is not positive"
         else
           Right . forceDP (negate sf) . BD.fromString
             . printf "%f"
