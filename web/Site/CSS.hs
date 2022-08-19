@@ -20,26 +20,30 @@ styles = do
     sym2 padding (rem 0.1) (rem 0.3)
     sym borderRadius (rem 0.25)
     color "#6b6158"
-    fontFamily ["JetBrains Mono"] [monospace]
+    fontFamily ["Roboto Mono"] [monospace]
+    fontWeight (weight 300)
   "#content" ? do
-    width (rem 40)
+    "width" -: "min(100vw, 45rem)"
     marginLeft auto
     marginRight auto
     paddingTop (vw 10)
+    paddingLeft (rem 5)
+    paddingRight (rem 5)
   h1 ? do
     color "#57514b"
     fontFamily ["DM Serif Display"] [serif]
   input ? do
     boxSizing borderBox
     width (rem 20)
-    fontFamily ["JetBrains Mono"] [monospace]
+    fontFamily ["Roboto Mono"] [monospace]
+    fontWeight (weight 300)
     fontSize (rem 1)
     marginBottom (px 0)
     backgroundColor "#e3d7c9"
     borderWidth 0
     color "#57514b"
     borderRadius (rem 0.3) (rem 0.3) (rem 0) (rem 0)
-    padding (rem 1.0) (rem 0.6) (rem 0.65) (rem 0.6)
+    padding (rem 0.9) (rem 0.6) (rem 0.65) (rem 0.6)
 
     focus & do
       "outline" -: "none"
