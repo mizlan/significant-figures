@@ -80,7 +80,7 @@ styles = do
   footer ? do
     position fixed
     bottom (px 0)
-    paddingBottom (vw 3)
+    paddingBottom (rem 2)
     color "#6b6158"
 
   ".success" ? do
