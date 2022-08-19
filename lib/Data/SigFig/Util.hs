@@ -82,6 +82,7 @@ display (Constant v@(a :% b)) =
       else show a ++ "/" ++ show b
 
 
+-- | Used in the CLI
 displayFull :: Term -> Text
 displayFull t@(Measured sf bd) = display t <> annot
   where annot = " (" <> T.pack (show sf) <> " s.f.)"
@@ -96,6 +97,14 @@ isTerminating = (== 1) . stripFactor 5 . stripFactor 2
     stripFactor d n = case n `quotRem` d of
       (q, 0) -> stripFactor d q
       _ -> n
+
+-- | Used in the API
+displayInformational :: Term -> (Text, Text)
+displayInformational t@(Measured sf bd) = (display t, annot)
+  where annot = T.pack (show sf) <> " significant figure" <> if sf /= 1 then "s" else mempty
+displayInformational t@(Constant (a :% b)) = (display t, annot)
+  where
+    annot = if isTerminating b then "constant value" else "constant, non-terminating decimal value"
 
 {-
 

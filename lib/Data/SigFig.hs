@@ -5,6 +5,7 @@ module Data.SigFig (
   parseEval,
   display,
   displayFull,
+  displayInformational,
   evaluate,
   module Data.SigFig.Types
 ) where
