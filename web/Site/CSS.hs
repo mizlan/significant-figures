@@ -7,31 +7,32 @@ import Prelude hiding (id, rem)
 
 styles :: Css
 styles = do
-  html
-    ? fontSize (px 21)
-  star
-    ? color "#57514b"
-  star # selection
-    ? backgroundColor "#d1c1b0"
-  body
-    ? backgroundColor "#ebe2d8"
+  html ? fontSize (px 21)
+  star ? do
+    color "#57514b"
+    fontFamily ["Inter"] [serif]
+  star # selection ? backgroundColor "#d1c1b0"
+  body ? backgroundColor "#ebe2d8"
+  code ? do
+    backgroundColor "#e3d7c9"
+    fontSize (rem 0.83)
+    sym margin (rem 0.2)
+    sym2 padding (rem 0.1) (rem 0.3)
+    sym borderRadius (rem 0.25)
+    color "#6b6158"
+    fontFamily ["JetBrains Mono"] [monospace]
   "#content" ? do
     width (rem 40)
     marginLeft auto
     marginRight auto
     paddingTop (vw 10)
-  -- display flex
-  -- justifyContent center
-  -- alignItems center
-  -- flexDirection column
-  -- position relative
   h1 ? do
     color "#57514b"
     fontFamily ["DM Serif Display"] [serif]
   input ? do
     boxSizing borderBox
     width (rem 20)
-    fontFamily [] [monospace]
+    fontFamily ["JetBrains Mono"] [monospace]
     fontSize (rem 1)
     marginBottom (px 0)
     backgroundColor "#e3d7c9"
@@ -70,8 +71,18 @@ styles = do
     left (rem 0)
 
   details ? do
-    fontFamily [] [monospace]
     marginTop (rem 2)
 
-    summary
-      ? fontFamily [] [monospace]
+    summary ? do
+      sym padding (rem 0.5)
+      paddingLeft (px 0)
+
+  footer ? do
+    position fixed
+    bottom (px 0)
+    paddingBottom (vw 3)
+    color "#6b6158"
+
+  a ? do
+    hover & do
+      backgroundColor "#e3d7c9"
