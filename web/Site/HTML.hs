@@ -2,7 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Site where
+module Site.HTML where
 
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -25,7 +25,7 @@ frontPage = H.docTypeHtml do
     H.link ! rel "stylesheet" ! type_ "text/css" ! href "/public/styles.css"
     H.link ! rel "preconnect" ! href "https://fonts.googleapis.com"
     H.link ! rel "preconnect" ! href "https://fonts.gstatic.com"
-    H.link ! href "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter&family=JetBrains+Mono&display=swap" ! rel "stylesheet"
+    H.link ! href "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300&family=Roboto+Mono:wght@300&display=swap" ! rel "stylesheet"
   H.body do
     H.div ! id "content" $
       do
@@ -35,12 +35,13 @@ frontPage = H.docTypeHtml do
             H.input ! id "expr" ! type_ "text" ! name "expr" ! placeholder "type an expression..."
             H.div ! id "cover" $ mempty
             H.div ! id "stick" $ mempty
-        H.div ! id "box" $ H.pre mempty
+        H.div ! id "box" $
+          (H.pre ! id "text" $ mempty) <> (H.pre ! id "subtext" $ mempty)
         H.details $
           H.summary "Usage"
             <> textToHtml "Type in an expression containing significant figures and operators! For an example, try this:"
             <> H.code "log(10.45) + 3.6200c * (876.45 - 9.4523) / 2c"
-            <> toHtml ("and see what you get!" :: Text)
+            <> textToHtml ("and see what you get!" :: Text)
         H.footer $
           textToHtml "made by "
             <> (H.a ! href "https://github.com/mizlan" $ "mizlan")
