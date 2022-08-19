@@ -1,9 +1,12 @@
 # Significant Figures
 
-The `Data.SigFig` module, containing only the logic, will be published to
-Hackage at some point. For personal use, there is a [→ frontend and
-API](https://significant-figures.herokuapp.com) and a CLI
-(`exe:significant-figures-cli`).
+This repository contains:
+* code for the `Data.SigFig` module that contains a variety of functions to
+  parse and evaluate expressions involving significant figures. This will be
+  published to Hackage at some point.
+* code for a [→ frontend](https://significant-figures.herokuapp.com), along
+  with a simple HTTP API
+* code for a minimal CLI using Haskeline ([→ wiki](https://github.com/judah/haskeline/wiki)).
 
 ## Supported Operations
 
@@ -42,6 +45,15 @@ annotation for significant figures:
 expr> 0.650 * 4000.
 2.60 x 10^3 (3 s.f.)
 ```
+
+## API
+
+The API is simple; there is an endpoint at
+[`/calc`](https://significant-figures.herokuapp.com/calc). You can perform either:
+* a `GET` request with a single URL-encoded parameter `"expr"` that corresponds
+  with the expression string
+* a `POST` request with a JSON body with a single field `"input"` that
+  corresponds with the expression string.
 
 ## Reminders
 
