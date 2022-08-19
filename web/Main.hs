@@ -5,6 +5,7 @@
 
 module Main where
 
+import Clay (render)
 import Control.Exception (IOException, catch)
 import Data.Aeson hiding (json)
 import Data.SigFig
@@ -15,7 +16,10 @@ import Data.Text.Lazy qualified as L
 import Data.Text.Lazy.Encoding qualified as L
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (Text))
-import Site
+import Language.Javascript.JMacro (renderJs)
+import Site.HTML
+import Site.CSS (styles)
+import Site.JS (frontpageJS)
 import System.Environment (getEnv)
 import Text.Blaze.Html.Renderer.Text qualified as R
 import Text.Blaze.Html5 qualified as H
@@ -23,10 +27,6 @@ import Text.Read (readMaybe)
 import Web.Internal.HttpApiData
 import Web.Spock
 import Web.Spock.Config
-import Site.JS (frontpageJS)
-import Site.CSS (styles)
-import Language.Javascript.JMacro (renderJs)
-import Clay (render)
 
 type Api = SpockM () () () ()
 
@@ -37,7 +37,7 @@ type ApiAction a = SpockAction () () () a
 data Calculation = Calculation
   { ok :: Bool,
     output :: Text,
-    sigfigs :: Maybe Int
+    annotation :: Maybe Text
   }
   deriving (Generic, Show)
 
@@ -66,16 +66,16 @@ app = do
   get "calc" do
     (CalculationRequest e) <- param' "expr" :: ApiAction CalculationRequest
     json $ case parseEval e of
-      Right t -> Calculation True (display t) $ case t of
-        Measured sf bd -> Just $ fromIntegral sf
-        Constant ra -> Nothing
+      Right t ->
+        let (a, b) = displayInformational t
+         in Calculation True a (Just b)
       Left e -> Calculation False e Nothing
   post "calc" do
     (CalculationRequest e) <- jsonBody' :: ApiAction CalculationRequest
     json $ case parseEval e of
-      Right t -> Calculation True (display t) $ case t of
-        Measured sf bd -> Just $ fromIntegral sf
-        Constant ra -> Nothing
+      Right t ->
+        let (a, b) = displayInformational t
+         in Calculation True a (Just b)
       Left e -> Calculation False e Nothing
 
 main :: IO ()

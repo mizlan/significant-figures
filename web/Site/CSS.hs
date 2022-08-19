@@ -11,6 +11,7 @@ styles = do
   star ? do
     color "#57514b"
     fontFamily ["Inter"] [serif]
+    fontWeight (weight 300)
   star # selection ? backgroundColor "#d1c1b0"
   body ? backgroundColor "#ebe2d8"
   code ? do
