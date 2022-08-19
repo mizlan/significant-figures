@@ -83,6 +83,20 @@ styles = do
     paddingBottom (vw 3)
     color "#6b6158"
 
+  ".success" ? do
+    borderWidth (px 0)
+    borderBottomWidth (rem 0.25)
+    borderStyle solid
+    backgroundColor "#cbdbc1"
+    borderColor "#b7c7ad"
+    height minContent
+
+  ".failure" ? do
+    borderWidth (px 0)
+    borderBottomWidth (rem 0.25)
+    borderStyle solid
+    backgroundColor "#e3c7bf"
+    borderColor "#cfb3ab"
   a ? do
     hover & do
       backgroundColor "#e3d7c9"

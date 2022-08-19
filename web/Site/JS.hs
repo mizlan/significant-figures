@@ -19,19 +19,26 @@ frontpageJS = [jmacro|
         'Content-Type': 'application/json'
       },
       body: JSON.stringify { input: expr }
-    }).then \res -> res.json();
+    }).then(\res -> res.json());
 
   var inp = document.querySelector '#expr';
   var form = document.querySelector '#calc';
-  var box = document.querySelector '#box pre';
+  var box = document.querySelector '#box';
+  var text = document.querySelector '#text';
+  var subtext = document.querySelector '#subtext';
 
-  fun process {| ok:ok, output:output, sigfigs:sigfigs |} {
+  fun process {| ok:ok, output:output, annotation:annotation |} {
     console.log "in process";
+    box.classList.remove 'success' 'failure';
     if (!ok) {
-      box.innerHTML = '✖ Error\n' + output;
+      text.innerHTML = '✖ Error\n' + output;
+      box.classList.add 'failure';
+      subtext.innerHTML = '';
       return;
     } else {
-      box.innerHTML = output + ' (' + sigfigs + ')';
+      text.innerHTML = output;
+      box.classList.add 'success';
+      subtext.innerHTML = annotation;
     }
   }
 
