@@ -23,12 +23,12 @@ frontpageJS = [jmacro|
 
   var inp = document.querySelector '#expr';
   var form = document.querySelector '#calc';
-  var box = document.querySelector '#box';
+  var box = document.querySelector '#box pre';
 
   fun process {| ok:ok, output:output, sigfigs:sigfigs |} {
     console.log "in process";
     if (!ok) {
-      box.innerHTML = output;
+      box.innerHTML = '✖ Error\n' + output;
       return;
     } else {
       box.innerHTML = output + ' (' + sigfigs + ')';
