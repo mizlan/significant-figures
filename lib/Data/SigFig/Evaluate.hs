@@ -1,4 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.SigFig.Evaluate (evaluate) where
@@ -62,12 +63,13 @@ evaluate (Apply Antilog10 e) = do
   case res of
     v@(Measured sf bd) ->
       let dp = rightmostSignificantPlace sf bd
-       in if dp >= 0
-            then Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
-            else
-              Right . forceSF (negate dp) . BD.fromString
-                . printf "%f"
-                $ (10 :: Float) ** realToFrac bd
+       in if
+              | dp >= 0 -> Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
+              | bd > 308 -> Left $ "exp(" <> display v <> ") is too big! sorry"
+              | otherwise ->
+                Right . forceSF (negate dp) . BD.fromString
+                  . printf "%f"
+                  $ (10 :: Double) ** realToFrac bd
     (Constant a) -> Left "taking the antilog of a constant is unsupported"
 
 computeUnconstrained :: [(Op, Term)] -> Rational -> Either Text Rational
