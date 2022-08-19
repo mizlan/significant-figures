@@ -29,6 +29,10 @@ frontPage = H.docTypeHtml do
   H.body do
     H.div ! id "content" $ do
       H.h1 "Significant Figures Calculator"
-      H.p ! id "box" $ ""
       H.form ! id "calc" ! action "calc" $ do
-        H.input ! id "expr" ! type_ "text" ! name "expr"
+        H.div ! id "wrapper" $ do
+          H.input ! id "expr" ! type_ "text" ! name "expr" ! placeholder "type an expression..."
+          H.div ! id "cover" $ mempty
+          H.div ! id "stick" $ mempty
+      H.div ! id "box" $ H.pre mempty
+      H.details $ H.summary "Usage" <> toHtml ( "how to work da ting" :: Text)
