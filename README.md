@@ -49,7 +49,7 @@ expr> 0.650 * 4000.
 ## API
 
 The API is simple; there is an endpoint at
-[`/calc`](https://significant-figures.herokuapp.com/calc). You can perform either:
+[→ `/calc`](https://significant-figures.herokuapp.com/calc). You can perform either:
 * a `GET` request with a single URL-encoded parameter `"expr"` that corresponds
   with the expression string
 * a `POST` request with a JSON body with a single field `"input"` that
