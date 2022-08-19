@@ -22,7 +22,10 @@ This repository contains:
 | exponentiation (`m ^ n`) where `m` is measured | `4.0 ** 4` | `2.6 x 10^2` |
 
 > I created the distinction between antilogarithm and exponentiation to
-> distinguish between which value is measured and which is constant.
+> distinguish between which value is measured and which is constant. You'd use
+> an antilogarithm, for instance, to calculate the molarity of H3O+ given pH,
+> whereas exponentiation is nothing more than a shorthand for repeated
+> multiplication.
 
 For the rules regarding significant figures, [→ see here](http://cxp.cengage.com/contentservice/assets/owms01h/references/significantfigures/index.html).
 
