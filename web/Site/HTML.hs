@@ -39,12 +39,17 @@ frontPage = H.docTypeHtml do
           (H.pre ! id "text" $ mempty) <> (H.pre ! id "subtext" $ mempty)
         H.details $
           H.summary "Usage"
-            <> textToHtml "Type in an expression containing significant figures and operators! For an example, try this:"
+            <> textToHtml "Type in an expression containing significant figures and operators! For an example, try this: "
             <> H.code "log(10.45) + 3.6200c * (876.45 - 9.4523) / 2c"
-            <> textToHtml ("and see what you get!" :: Text)
+            <> textToHtml " and see what you get! "
+            <> textToHtml "More details are available " <> (H.a ! href "https://github.com/mizlan/significant-figures#supported-operations") "here" <> textToHtml "."
         H.footer $
           textToHtml "made by "
             <> (H.a ! href "https://github.com/mizlan" $ "mizlan")
             <> textToHtml " with ♥"
+            <> textToHtml " · "
+            <> (H.a ! href "https://github.com/mizlan/significant-figures/issues/new" $ "report an issue")
+            <> textToHtml " · "
+            <> (H.a ! href "https://github.com/mizlan/significant-figures" $ "view source code")
   where
     textToHtml = toHtml :: Text -> Html

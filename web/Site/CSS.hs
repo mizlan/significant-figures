@@ -17,7 +17,6 @@ styles = do
   code ? do
     backgroundColor "#e3d7c9"
     fontSize (rem 0.83)
-    sym margin (rem 0.2)
     sym2 padding (rem 0.1) (rem 0.3)
     sym borderRadius (rem 0.25)
     color "#6b6158"
@@ -76,7 +75,8 @@ styles = do
     left (rem 0)
 
   details ? do
-    marginTop (rem 2)
+    marginTop (rem 1)
+    lineHeight (rem 1.4)
 
     summary ? do
       sym padding (rem 0.5)
@@ -88,7 +88,9 @@ styles = do
     paddingBottom (rem 2)
     color "#6b6158"
 
-  ".success" ? do
+  "#box" # ".success" ? do
+    marginTop (rem 0.8)
+    padding (rem 0.9) (rem 0.6) (rem 0.65) (rem 0.6)
     borderWidth (px 0)
     borderBottomWidth (rem 0.25)
     borderStyle solid
@@ -96,7 +98,9 @@ styles = do
     borderColor "#b7c7ad"
     height minContent
 
-  ".failure" ? do
+  "#box" # ".failure" ? do
+    marginTop (rem 0.5)
+    padding (rem 0.9) (rem 0.6) (rem 0.65) (rem 0.6)
     borderWidth (px 0)
     borderBottomWidth (rem 0.25)
     borderStyle solid
@@ -109,12 +113,12 @@ styles = do
     -- height minContent
 
   "#box" ? do
-    marginTop (rem 0.5)
+    sym margin (px 0)
+    sym padding (px 0)
     -- height (px 0)
     boxSizing borderBox
     width (rem 20)
     borderRadius (rem 0.3) (rem 0.3) (rem 0.3) (rem 0.3)
-    padding (rem 0.9) (rem 0.6) (rem 0.65) (rem 0.6)
     -- transitionProperty "height"
     -- transitionDuration (sec 0.5)
 
