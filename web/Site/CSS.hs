@@ -97,6 +97,34 @@ styles = do
     borderStyle solid
     backgroundColor "#e3c7bf"
     borderColor "#cfb3ab"
+
+    pre ? do
+      fontColor $ rgba 0 0 0 0.5
+      fontSize (rem 0.8)
+    -- height minContent
+
+  "#box" ? do
+    marginTop (rem 0.5)
+    -- height (px 0)
+    boxSizing borderBox
+    width (rem 20)
+    borderRadius (rem 0.3) (rem 0.3) (rem 0.3) (rem 0.3)
+    padding (rem 0.9) (rem 0.6) (rem 0.65) (rem 0.6)
+    -- transitionProperty "height"
+    -- transitionDuration (sec 0.5)
+
+    pre ? do
+      sym padding (px 0)
+      sym margin (px 0)
+      whiteSpace preWrap
+
+    "#subtext" ? do
+      fontSize (rem 0.8)
+      color $ rgba 0 0 0 0.5
+      paddingTop (rem 0.4)
+      empty & do
+        display none
+
   a ? do
     hover & do
       backgroundColor "#e3d7c9"
