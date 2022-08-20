@@ -1,0 +1,28 @@
+cabal-version:      3.6
+name:               significant-figures-web
+version:            0.1.0.0
+synopsis:           Web interface and API to help calculate expressions involving significant figures.
+bug-reports:        https://github.com/mizlan/significant-figures/issues
+license:            GPL-3.0-or-later
+license-file:       LICENSE
+author:             Michael Lan
+maintainer:         michaellan202@gmail.com
+category:           Chemistry
+-- extra-source-files: CHANGELOG.md
+
+executable significant-figures-web
+  default-language: Haskell2010
+  hs-source-dirs:   src
+  main-is:          Main.hs
+  other-modules:    Site.HTML
+                   ,Site.JS
+                   ,Site.CSS
+  build-depends:    base ^>=4.14.3.0
+                   ,text
+                   ,aeson
+                   ,blaze-html
+                   ,Spock
+                   ,http-api-data
+                   ,jmacro ==0.6.17.1
+                   ,clay
+                   ,significant-figures
