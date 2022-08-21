@@ -56,8 +56,8 @@ roundToPlace bd@(BigDecimal v s) dp
 -- "0.375 (const)"
 -- "4/9 (non-terminating const)"
 -- "4.3 (2 s.f.)"
-display :: Term -> Text
-display (Measured sf bd) = format bd
+display :: Term -> Either Text Text
+display (Measured sf bd) = if BD.precision bd >= 308 then Left "too large to display" else pure $ format bd
   where
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
@@ -77,17 +77,30 @@ display (Measured sf bd) = format bd
                     <> (if s > 0 then "" else ".")
                     <> T.replicate (fromIntegral $ sf - p) "0"
 display (Constant v@(a :% b)) =
-  T.pack $
-    if isTerminating b
-      then BD.toString . BD.nf . fromRational $ v
-      else show a ++ "/" ++ show b
+  if fromRational v > maxNonInfiniteDouble
+    then Left "the number you want is greater than the number of all the atoms in the universe, multiplied by the number of all possible entire chess games, multiplied by the number of possible board states in the game of Go (your number is greater than ~1.8 x 10^308)"
+    else
+      pure $
+        T.pack $
+          if isTerminating b
+            then BD.toString . fromRational $ v
+            else show a ++ "/" ++ show b
 
+maxNonInfiniteDouble :: Double
+maxNonInfiniteDouble = encodeFloat m n
+  where
+    b = floatRadix (0 :: Double)
+    e = floatDigits (0 :: Double)
+    (_, e') = floatRange (0 :: Double)
+    m = b ^ e - 1
+    n = e' - e
 
 -- | Used in the CLI
-displayFull :: Term -> Text
-displayFull t@(Measured sf bd) = display t <> annot
-  where annot = " (" <> T.pack (show sf) <> " s.f.)"
-displayFull t@(Constant (a :% b)) = display t <> annot
+displayFull :: Term -> Either Text Text
+displayFull t@(Measured sf bd) = (<> annot) <$> display t
+  where
+    annot = " (" <> T.pack (show sf) <> " s.f.)"
+displayFull t@(Constant (a :% b)) = (<> annot) <$> display t
   where
     annot = if isTerminating b then " (const)" else " (non-terminating const)"
 
@@ -99,11 +112,12 @@ isTerminating = (== 1) . stripFactor 5 . stripFactor 2
       (q, 0) -> stripFactor d q
       _ -> n
 
--- | Used in the API
-displayInformational :: Term -> (Text, Text)
-displayInformational t@(Measured sf bd) = (display t, annot)
-  where annot = T.pack (show sf) <> " significant figure" <> if sf /= 1 then "s" else mempty
-displayInformational t@(Constant (a :% b)) = (display t, annot)
+-- | Used in the API. also wtf is this type sygnature rip
+displayInformational :: Term -> Either Text (Text, Text)
+displayInformational t@(Measured sf bd) = (,annot) <$> display t
+  where
+    annot = T.pack (show sf) <> " significant figure" <> if sf /= 1 then "s" else mempty
+displayInformational t@(Constant (a :% b)) = (,annot) <$> display t
   where
     annot = if isTerminating b then "constant value" else "constant, non-terminating decimal value"
 
