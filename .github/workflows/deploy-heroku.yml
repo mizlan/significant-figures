@@ -23,7 +23,7 @@ jobs:
       - run: cabal build -O2 exe:significant-figures-web
       - run: mkdir -p ../heroku-repo
       # - uses: lhotari/action-upterm@v1
-      - run: mv dist-newstyle/build/x86_64-linux/ghc-8.10.7/significant-figures-0.1.0.0/x/significant-figures-web/opt/build/significant-figures-web/significant-figures-web ../heroku-repo/sigfig-web
+      - run: mv dist-newstyle/build/x86_64-linux/ghc-8.10.7/significant-figures-web-0.1.0.0/x/significant-figures-web/opt/build/significant-figures-web/significant-figures-web ../heroku-repo/sigfig-web
       - run: cp Procfile ../heroku-repo
       - run: |
          cd ../heroku-repo
