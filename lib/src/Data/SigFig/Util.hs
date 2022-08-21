@@ -8,6 +8,7 @@ import Data.BigDecimal qualified as BD
 import Data.SigFig.Types
 import Data.Text (Text)
 import Data.Text qualified as T
+import GHC.Natural (naturalFromInteger)
 import GHC.Real (Ratio ((:%)), (%))
 
 isMeasured (Measured _ _) = True
