@@ -62,11 +62,13 @@ evaluate (Apply Log10 e) = do
 evaluate (Apply Antilog10 e) = do
   res <- evaluate e
   case res of
-    v@(Measured sf bd) ->
-      let dp = rightmostSignificantPlace sf bd
+    arg@(Measured sf bd') ->
+      let bd@(BigDecimal v s) = BD.nf bd'
+          dp = rightmostSignificantPlace sf bd
        in if
-              | dp >= 0 -> Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
-              | bd > 308 -> Left $ "exp(" <> display v <> ") is too big! sorry"
+              | dp >= 0 -> Left $ display arg <> " has 0 significant decimal places so exp(" <> display arg <> ") is undefined"
+              | s == 0 -> Right . forceSF (negate dp) $ BigDecimal (10 ^ v) 1
+              | bd > 308 -> Left $ "exp(" <> display arg <> ") is too big! sorry"
               | otherwise ->
                 Right . forceSF (negate dp) . BD.fromString
                   . printf "%f"
