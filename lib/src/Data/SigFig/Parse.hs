@@ -5,7 +5,7 @@
 module Data.SigFig.Parse where
 
 import Control.Monad (when)
-import Data.BigDecimal (BigDecimal (..))
+import Data.BigDecimal (BigDecimal (BigDecimal))
 import Data.BigDecimal qualified as BD
 import Data.SigFig.Types
 import Data.Text (Text)
@@ -100,7 +100,7 @@ exponentE = do
     string "**"
     spaces
     return k
-  i <- toInteger . BD.getValue . BD.nf . value <$> try integerLike
+  i <- toInteger . BD.value . BD.nf . value <$> try integerLike
   when (i < 0) $ unexpected "negative exponent"
   return $ Exp e i
 

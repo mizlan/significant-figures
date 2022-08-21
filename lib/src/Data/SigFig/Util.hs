@@ -19,14 +19,14 @@ isMeasured (Constant _) = False
 rightmostSignificantPlace :: Integer -> BigDecimal -> Integer
 rightmostSignificantPlace sf bd =
   let v' = BD.nf bd
-      dp = BD.getScale v'
+      dp = BD.scale v'
       p = BD.precision v'
-   in p - sf - dp
+   in fromIntegral p - sf - fromIntegral dp
 
 forceDP :: Integer -> BigDecimal -> Term
 forceDP dp bd =
   let res = BD.nf $ roundToPlace bd dp
-   in Measured (BD.precision res - BD.getScale res - dp) res
+   in Measured (fromIntegral (BD.precision res) - fromIntegral (BD.scale res) - dp) res
 
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
 -- to the left of decimal place, negative means to the right
@@ -34,9 +34,9 @@ forceDP dp bd =
 -- >>> roundToPlace (BigDecimal 421 1) (0)
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
-  | dp < 0 = BD.roundBD bd $ BD.halfUp (- dp)
+  | dp < 0 = BD.roundBD bd $ BD.halfUp (fromIntegral (- dp))
   | otherwise =
-    let bd' = BigDecimal v (s + dp)
+    let bd' = BigDecimal v (s + fromIntegral dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ dp
 
 -- >>> display (Measured 3 (BigDecimal 200 0))
@@ -55,15 +55,16 @@ roundToPlace bd@(BigDecimal v s) dp
 -- "0.375 (const)"
 -- "4/9 (non-terminating const)"
 -- "4.3 (2 s.f.)"
-display :: Term -> Either Text Text
-display (Measured sf bd) = if BD.precision bd >= 308 then Left "too large to display" else pure $ format bd
+display :: Term -> Text
+display (Measured sf bd) = format bd
   where
     ssf = T.pack $ show sf
     format :: BigDecimal -> Text
     format term' =
-      let term@(BigDecimal v s) = BD.nf term'
+      let term@(BigDecimal v s') = BD.nf term'
+          s = fromIntegral s' :: Integer
           termText = T.pack . BD.toString $ term
-          p = BD.precision term
+          p = fromIntegral (BD.precision term) :: Integer
           rsdp = p - sf - s
           rsd = if sf > p then 0 else v `div` (10 ^ (rsdp + s)) `mod` 10
        in if rsd /= 0 || rsdp == 0 && p == 1
@@ -76,9 +77,10 @@ display (Measured sf bd) = if BD.precision bd >= 308 then Left "too large to dis
                     <> (if s > 0 then "" else ".")
                     <> T.replicate (fromIntegral $ sf - p) "0"
 display (Constant v@(a :% b)) =
-          if isTerminating b
-            then BD.toString . fromRational $ v
-            else show a ++ "/" ++ show b
+  T.pack $
+    if isTerminating b
+      then BD.toString . BD.nf $ fromRational v
+      else show a ++ "/" ++ show b
 
 maxNonInfiniteDouble :: Double
 maxNonInfiniteDouble = encodeFloat m n
@@ -90,11 +92,11 @@ maxNonInfiniteDouble = encodeFloat m n
     n = e' - e
 
 -- | Used in the CLI
-displayFull :: Term -> Either Text Text
-displayFull t@(Measured sf bd) = (<> annot) <$> display t
+displayFull :: Term -> Text
+displayFull t@(Measured sf bd) = display t <> annot
   where
     annot = " (" <> T.pack (show sf) <> " s.f.)"
-displayFull t@(Constant (a :% b)) = (<> annot) <$> display t
+displayFull t@(Constant (a :% b)) = display t <> annot
   where
     annot = if isTerminating b then " (const)" else " (non-terminating const)"
 
@@ -106,12 +108,12 @@ isTerminating = (== 1) . stripFactor 5 . stripFactor 2
       (q, 0) -> stripFactor d q
       _ -> n
 
--- | Used in the API. also wtf is this type sygnature rip
-displayInformational :: Term -> Either Text (Text, Text)
-displayInformational t@(Measured sf bd) = (,annot) <$> display t
+-- | Used in the API.
+displayInformational :: Term -> (Text, Text)
+displayInformational t@(Measured sf bd) = (display t, annot)
   where
     annot = T.pack (show sf) <> " significant figure" <> if sf /= 1 then "s" else mempty
-displayInformational t@(Constant (a :% b)) = (,annot) <$> display t
+displayInformational t@(Constant (a :% b)) = (display t, annot)
   where
     annot = if isTerminating b then "constant value" else "constant, non-terminating decimal value"
 
