@@ -1,1 +1,1 @@
-web: ./sigfig-api
+web: ./sigfig-web
