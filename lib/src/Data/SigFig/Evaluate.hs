@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.SigFig.Evaluate (evaluate) where
+module Data.SigFig.Evaluate where
 
 import Data.BigDecimal (BigDecimal (..))
 import Data.BigDecimal qualified as BD
