@@ -1,6 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 
 module Data.SigFig.Util where
 
@@ -71,17 +70,12 @@ display (Measured sf bd) = if BD.precision bd >= 308 then Left "too large to dis
             then termText
             else
               if rsdp >= 1
-                then let coef = BigDecimal v (s + (p - 1)) in format coef <> " x 10^" <> T.pack (show $ p - 1)
+                then let coef = BigDecimal v (fromIntegral (s + (p - 1))) in format coef <> " x 10^" <> T.pack (show $ p - 1)
                 else
                   termText
                     <> (if s > 0 then "" else ".")
                     <> T.replicate (fromIntegral $ sf - p) "0"
 display (Constant v@(a :% b)) =
-  if fromRational v > maxNonInfiniteDouble
-    then Left "the number you want is greater than the number of all the atoms in the universe, multiplied by the number of all possible entire chess games, multiplied by the number of possible board states in the game of Go (your number is greater than ~1.8 x 10^308)"
-    else
-      pure $
-        T.pack $
           if isTerminating b
             then BD.toString . fromRational $ v
             else show a ++ "/" ++ show b
