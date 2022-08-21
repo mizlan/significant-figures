@@ -50,7 +50,9 @@ evaluate (Apply Log10 e) = do
   case res of
     v@(Measured sf bd) ->
       if bd <= 0
-        then Left $ "cannot evaluate log(" <> display v <> "), argument is not positive"
+        then do
+          v' <- display v
+          Left $ "cannot evaluate log(" <> v' <> "), argument is not positive"
         else
           Right . forceDP (negate sf) . BD.fromString
             . printf "%f"
@@ -64,8 +66,12 @@ evaluate (Apply Antilog10 e) = do
     v@(Measured sf bd) ->
       let dp = rightmostSignificantPlace sf bd
        in if
-              | dp >= 0 -> Left $ display v <> " has 0 significant decimal places so exp(" <> display v <> ") is undefined"
-              | bd > 308 -> Left $ "exp(" <> display v <> ") is too big! sorry"
+              | dp >= 0 -> do
+                  v' <- display v
+                  Left $ v' <> " has 0 significant decimal places so exp(" <> v' <> ") is undefined"
+              | bd > 308 -> do
+                  v' <- display v
+                  Left $ "exp(" <> v' <> ") is too big! sorry"
               | otherwise ->
                 Right . forceSF (negate dp) . BD.fromString
                   . printf "%f"
