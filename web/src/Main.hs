@@ -3,7 +3,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Main (app, main) where
 
 import Clay (render)
 import Control.Exception (IOException, catch)
@@ -17,8 +17,8 @@ import Data.Text.Lazy.Encoding qualified as L
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (Text))
 import Language.Javascript.JMacro (renderJs)
-import Site.HTML
 import Site.CSS (styles)
+import Site.HTML
 import Site.JS (frontpageJS)
 import System.Environment (getEnv)
 import Text.Blaze.Html.Renderer.Text qualified as R
@@ -32,7 +32,7 @@ type Api = SpockM () () () ()
 
 type ApiAction a = SpockAction () () () a
 
--- | Datatype representing API calculation. If sigfigs is not a number or,
+-- | Datatype representing API calculation. If sigfigs is not a number or
 -- is not present, that means the number is a constant. Otherwise it's a measured number.
 data Calculation = Calculation
   { ok :: Bool,
@@ -57,26 +57,25 @@ app :: Api
 app = do
   get root do
     html . L.toStrict $ R.renderHtml frontPage
-  get "public/index.js" do
+  getPublic "index.js" do
     setHeader "Content-Type" "application/javascript"
     lazyBytes . L.encodeUtf8 . L.pack . show . renderJs $ frontpageJS
-  get "public/styles.css" do
+  getPublic "styles.css" do
     setHeader "Content-Type" "text/css"
     lazyBytes . L.encodeUtf8 . render $ styles
   get "calc" do
-    (CalculationRequest e) <- param' "expr" :: ApiAction CalculationRequest
-    json $ case parseEval e of
-      Right t ->
-        let (a, b) = displayInformational t
-         in Calculation True a (Just b)
-      Left e -> Calculation False e Nothing
+    calcResp $ param' "expr"
   post "calc" do
-    (CalculationRequest e) <- jsonBody' :: ApiAction CalculationRequest
-    json $ case parseEval e of
-      Right t ->
-        let (a, b) = displayInformational t
-         in Calculation True a (Just b)
-      Left e -> Calculation False e Nothing
+    calcResp jsonBody'
+  where
+    getPublic = get . ("public" <//>)
+    calcResp action = do
+      (CalculationRequest e) <- action :: ApiAction CalculationRequest
+      json $ case parseEval e of
+        Right t ->
+          let (a, b) = displayInformational t
+           in Calculation True a (Just b)
+        Left e -> Calculation False e Nothing
 
 main :: IO ()
 main = do
