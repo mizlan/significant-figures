@@ -7,12 +7,16 @@ module Data.SigFig.Types
     Expr (..),
     Function (..),
     l,
+    lMeasured,
+    lConstant,
     add,
     sub,
     mul,
     div,
     exp,
     apply,
+    measured,
+    constant,
   )
 where
 
@@ -28,8 +32,8 @@ data Term
     Constant Rational
   deriving (Show, Eq)
 
-measured :: (RealFrac a) => Integer -> a -> Term
-measured sf = Measured sf . realToFrac
+measured :: Integer -> Rational -> Term
+measured sf = Measured sf . fromRational
 
 constant :: (RealFrac a) => a -> Term
 constant = Constant . toRational
@@ -46,6 +50,12 @@ data Op
 
 l :: Term -> Expr
 l = Leaf
+
+lMeasured :: Integer -> Rational -> Expr
+lMeasured = (l .) . measured
+
+lConstant :: Double -> Expr
+lConstant = l . constant
 
 -- | Add together a list of 'Expr's and create a new `Expr`
 add :: [Expr] -> Expr
