@@ -107,3 +107,9 @@ The API is simple; there is an endpoint at
   TL;DR: How zeroes work is pretty controversial but it should work the way
   you'd expect them to intuitively (I asked other people how they'd expect
   zeroes to work and it was the way it currently is).
+
+## TODO
+
+* add Hackage documentation
+* test on other GHC versions
+* add convenience functions for creating Exprs
