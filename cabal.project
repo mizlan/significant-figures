@@ -3,5 +3,5 @@ packages: lib
 
 source-repository-package
     type: git
-    location: https://github.com/mizlan/HasBigDecimal
-    tag: 7d7e319619c63faca4193026b26335fddb269ddb
+    location: https://github.com/thma/HasBigDecimal
+    tag: fdea3efcd9d866f88cfd8c1c833c6fdd1b147a02
