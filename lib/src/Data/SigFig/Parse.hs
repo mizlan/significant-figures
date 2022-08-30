@@ -119,6 +119,7 @@ exponentE = do
   when (i < 0) $ unexpected "negative exponent"
   return $ Exp e i
 
+-- | A list of all the functions available.
 funcMap :: [(Function, Text)]
 funcMap =
   [ (Log10, "log"),
@@ -135,9 +136,11 @@ genFuncParsers = do
     char ')'
     pure $ Apply f e
 
+-- | Parses a function application.
 function :: Parses Expr
 function = choice genFuncParsers
 
+-- | Parses any expression.
 expr :: Parses Expr
 expr =
   try prec1Chain
@@ -147,6 +150,7 @@ expr =
     <|> try function
     <|> try leaf
 
+-- | Parses a full expression.
 fullExpr :: Parses Expr
 fullExpr =
   choice
@@ -158,7 +162,7 @@ fullExpr =
       leaf <* eof
     ]
 
--- | generate chains: necessary because sigfig-simplification
+-- | Generate a chain parser: necessary because sigfig-simplification
 -- only occurs on completion of evaluation of such a chain
 precChain :: [Parses Expr] -> Parses Char -> ([(Op, Expr)] -> Expr) -> Op -> Parses Expr
 precChain validOperands validOperator constructor idOp =
@@ -177,6 +181,7 @@ precChain validOperands validOperator constructor idOp =
         rest ((toOp op, term') : terms)
         <|> return (constructor (reverse terms))
 
+-- | Parse a precendence-2 chain (of both addition or subtraction)
 prec1Chain :: Parses Expr
 prec1Chain =
   precChain
@@ -185,6 +190,7 @@ prec1Chain =
     Prec1
     Add
 
+-- | Parse a precendence-2 chain (of both multiplication or division)
 prec2Chain :: Parses Expr
 prec2Chain =
   precChain
