@@ -12,9 +12,12 @@ where
 import Data.BigDecimal (BigDecimal (..))
 import Data.BigDecimal qualified as BD
 
+-- | The basic datatype to represent measurements, constant terms, and evaluation results
 data Term
-  = Measured {numSigFigs :: Integer, value :: BigDecimal}
-  | Constant Rational
+  = -- | A measured value with a finite number of significant figures and an associated value
+    Measured {numSigFigs :: Integer, value :: BigDecimal}
+  | -- | A constant value with infinite significant figures
+    Constant Rational
   deriving (Show, Eq)
 
 data Sign = Positive | Negative

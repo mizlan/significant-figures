@@ -33,6 +33,7 @@ forceDP dp bd =
 -- to the left of decimal place, negative means to the right
 --
 -- >>> roundToPlace (BigDecimal 421 1) (0)
+-- 42
 roundToPlace :: BigDecimal -> Integer -> BigDecimal
 roundToPlace bd@(BigDecimal v s) dp
   | dp < 0 = BD.roundBD bd $ BD.halfUp (fromIntegral (- dp))
@@ -40,22 +41,27 @@ roundToPlace bd@(BigDecimal v s) dp
     let bd' = BigDecimal v (s + fromIntegral dp)
      in BD.roundBD bd' (BD.halfUp 0) * 10 ^ dp
 
+-- | Given a term, display it in the most convenient way possible. This means,
+-- if the normal representation of the number accurately represents how many
+-- significant figures it has, then display it normally. Adds trailing zeroes
+-- if necessary to floats and opts for scientific notation if necessary.
+--
 -- >>> display (Measured 3 (BigDecimal 200 0))
+-- "200."
 -- >>> display (Measured 3 (BigDecimal 4 0))
+-- "4.00"
 -- >>> display (Measured 2 (BigDecimal 400 0))
+-- "4.0 x 10^2"
 -- >>> display (Measured 2 (BigDecimal 430 0))
+-- "430"
 -- >>> display (Measured 1 (BigDecimal 1 0))
+-- "1"
 -- >>> display (Constant (3 % 8))
+-- "0.375"
 -- >>> display (Constant (4 % 9))
+-- "4/9"
 -- >>> display (Measured 2 (BigDecimal 43 1))
--- "200. (3 s.f.)"
--- "4.00 (3 s.f.)"
--- "4.0 x 10^2 (2 s.f.)"
--- "430 (2 s.f.)"
--- "1 (1 s.f.)"
--- "0.375 (const)"
--- "4/9 (non-terminating const)"
--- "4.3 (2 s.f.)"
+-- "4.3"
 display :: Term -> Text
 display (Measured sf bd) = format bd
   where
@@ -64,7 +70,7 @@ display (Measured sf bd) = format bd
     format term' =
       let term@(BigDecimal v s') = BD.nf term'
           s = fromIntegral s' :: Integer
-          termText = T.pack . BD.toString $ term
+          termText = T.pack . show $ term
           p = fromIntegral (BD.precision term) :: Integer
           rsdp = p - sf - s
           rsd = if sf > p then 0 else v `div` (10 ^ (rsdp + s)) `mod` 10
@@ -80,7 +86,7 @@ display (Measured sf bd) = format bd
 display (Constant v@(a :% b)) =
   T.pack $
     if isTerminating b
-      then BD.toString . BD.nf $ fromRational v
+      then show . BD.nf $ fromRational v
       else show a ++ "/" ++ show b
 
 maxNonInfiniteDouble :: Double
@@ -109,7 +115,14 @@ isTerminating = (== 1) . stripFactor 5 . stripFactor 2
       (q, 0) -> stripFactor d q
       _ -> n
 
--- | Used in the API.
+-- | Given a term, return a tuple where the first element is the output of display and the second is an annotation of the type of value. Used in the API.
+--
+-- >>> displayInformational (Constant 3)
+-- ("3","constant value")
+-- >>> let b = BD.fromString "3.4" in displayInformational (Measured 2 b)
+-- ("3.4","2 significant figures")
+-- >>> let b = BD.fromString "3400" in displayInformational (Measured 3 b)
+-- ("3.40 x 10^3","3 significant figures")
 displayInformational :: Term -> (Text, Text)
 displayInformational t@(Measured sf bd) = (display t, annot)
   where

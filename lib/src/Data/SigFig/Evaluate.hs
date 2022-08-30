@@ -14,6 +14,7 @@ import Data.Text qualified as T
 import Data.Tuple.Extra (second)
 import Text.Printf (printf)
 
+-- | Given an expression tree, evaluate it and return either an error or result
 evaluate :: Expr -> Either Text Term
 evaluate (Leaf a) = Right a
 evaluate (Prec1 xs) = case xs of

@@ -12,13 +12,12 @@ import Data.Text qualified as T
 import Text.Parsec
 import Data.Bifunctor (first)
 
-textify :: Either ParseError a -> Either Text a
-textify = first (T.pack . show)
-
+-- | Takes an expression in text and returns either an error message or an evaluated term
 parseEval :: Text -> Either Text Term
 parseEval e = textify (parse fullExpr "" e) >>= evaluate
+  where textify = first (T.pack . show)
 
--- | A convenience function for use in REPLs. Returns text that can either be a
+-- | A convenience function for use in REPLs. Returns text that can either signify a
 -- result or error.
 processExpression :: Text -> Text
 processExpression e = either ("Error: " <>) displayFull $ parseEval e
