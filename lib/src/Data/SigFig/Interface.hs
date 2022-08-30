@@ -10,7 +10,7 @@ import Data.SigFig.Util
 import Data.Text (Text)
 import Data.Text qualified as T
 
--- | Takes an expression in text and returns either an error message or an evaluated term
+-- | Takes an expression in text and returns either an error message or an evaluated term.
 parseEval :: Text -> Either Text Term
 parseEval e = parse e >>= evaluate
 

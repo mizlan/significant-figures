@@ -14,7 +14,6 @@ import Data.Text qualified as T
 import GHC.Real (Ratio ((:%)), (%))
 import Text.Parsec hiding (parse)
 import Text.Parsec qualified as P
-import Data.Either (fromRight)
 
 type Parses = Parsec Text ()
 
@@ -180,7 +179,7 @@ precChain validOperands validOperator constructor idOp =
         op <- operator
         term' <- operand
         rest ((toOp op, term') : terms)
-        <|> return (constructor (reverse terms))
+        <|> (pure . constructor $ reverse terms)
 
 -- | Parse a precendence-2 chain (of both addition or subtraction)
 prec1Chain :: Parses Expr
