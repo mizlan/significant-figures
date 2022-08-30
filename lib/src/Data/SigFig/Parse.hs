@@ -5,15 +5,30 @@
 module Data.SigFig.Parse where
 
 import Control.Monad (when)
+import Data.Bifunctor (first)
 import Data.BigDecimal (BigDecimal (BigDecimal))
 import Data.BigDecimal qualified as BD
 import Data.SigFig.Types
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Real (Ratio ((:%)), (%))
-import Text.Parsec
+import Text.Parsec hiding (parse)
+import Text.Parsec qualified as P
+import Data.Either (fromRight)
 
 type Parses = Parsec Text ()
+
+-- | Parse text into either an error message or an expression.
+parse :: Text -> Either Text Expr
+parse = textify . P.parse fullExpr ""
+  where
+    textify = first (T.pack . show)
+
+-- | Parse text into an expression, or error if it could not parse successfully.
+parse' :: Text -> Expr
+parse' s = case parse s of
+  Left e -> error . T.unpack $ "parse' crashed because: " <> e
+  Right e -> e
 
 toOp :: Char -> Op
 toOp '+' = Add
