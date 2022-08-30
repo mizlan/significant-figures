@@ -47,6 +47,7 @@ signF :: Num a => Sign -> (a -> a)
 signF Positive = id
 signF Negative = negate
 
+-- | Parses at least 1 digit, as Text.
 digits :: Parses Text
 digits = T.pack <$> many1 digit
 

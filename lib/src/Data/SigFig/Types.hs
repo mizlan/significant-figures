@@ -71,14 +71,14 @@ data Function = Log10 | Antilog10
 
 -- A datatype to represent (not-yet-evaluated) expressions. Use 'parse'
 data Expr
-  = Leaf Term
-  -- ^ Leaf of an expression
-  | Prec1 [(Op, Expr)]
-  -- ^ Operation of "Precedence 1": addition and subtraction
-  | Prec2 [(Op, Expr)]
-  -- ^ Operation of "Precedence 2": multiplication and division
-  | Exp Expr Integer
-  -- ^ Exponentiation with a constant integer exponent
-  | Apply Function Expr
-  -- ^ Application of a function to an expression argument
+  = -- | Leaf of an expression
+    Leaf Term
+  | -- | Operation of "Precedence 1": addition and subtraction
+    Prec1 [(Op, Expr)]
+  | -- | Operation of "Precedence 2": multiplication and division
+    Prec2 [(Op, Expr)]
+  | -- | Exponentiation with a constant integer exponent
+    Exp Expr Integer
+  | -- | Application of a function to an expression argument
+    Apply Function Expr
   deriving (Show)
