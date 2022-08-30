@@ -35,8 +35,8 @@ data Term
 measured :: Integer -> Rational -> Term
 measured sf = Measured sf . fromRational
 
-constant :: (RealFrac a) => a -> Term
-constant = Constant . toRational
+constant :: Rational -> Term
+constant = Constant
 
 data Sign = Positive | Negative
   deriving (Show, Eq)
@@ -54,7 +54,7 @@ l = Leaf
 lMeasured :: Integer -> Rational -> Expr
 lMeasured = (l .) . measured
 
-lConstant :: Double -> Expr
+lConstant :: Rational -> Expr
 lConstant = l . constant
 
 -- | Add together a list of 'Expr's and create a new `Expr`
@@ -62,13 +62,15 @@ add :: [Expr] -> Expr
 add = Prec1 . zip (repeat Add)
 
 sub :: [Expr] -> Expr
-sub = Prec1 . zip (repeat Sub)
+sub [] = Prec1 []
+sub (x:xs) = Prec1 $ (Add, x) : zip (repeat Sub) xs
 
 mul :: [Expr] -> Expr
 mul = Prec2 . zip (repeat Mul)
 
 div :: [Expr] -> Expr
-div = Prec2 . zip (repeat Div)
+div [] = Prec2 []
+div (x:xs) = Prec2 $ (Mul, x) : zip (repeat Div) xs
 
 exp :: Expr -> Integer -> Expr
 exp = Exp
@@ -77,7 +79,7 @@ apply :: Function -> Expr -> Expr
 apply = Apply
 
 data Function = Log10 | Antilog10
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- A datatype to represent (not-yet-evaluated) expressions. Use 'parse'
 data Expr
@@ -91,4 +93,4 @@ data Expr
     Exp Expr Integer
   | -- | Application of a function to an expression argument
     Apply Function Expr
-  deriving (Show)
+  deriving (Show, Eq)
