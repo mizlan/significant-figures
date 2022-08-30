@@ -5,7 +5,7 @@ module Data.SigFig.Util where
 
 import Data.BigDecimal (BigDecimal (..))
 import Data.BigDecimal qualified as BD
-import Data.SigFig.Types
+import Data.SigFig.Types hiding (div)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Natural (naturalFromInteger)
