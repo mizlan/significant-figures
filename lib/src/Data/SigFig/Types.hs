@@ -81,7 +81,7 @@ apply = Apply
 data Function = Log10 | Antilog10
   deriving (Show, Eq)
 
--- A datatype to represent (not-yet-evaluated) expressions. Use 'parse'
+-- A datatype to represent (not-yet-evaluated) expressions. Use 'parse' to create such an expression from text.
 data Expr
   = -- | Leaf of an expression
     Leaf Term
