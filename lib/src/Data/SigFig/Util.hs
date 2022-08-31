@@ -67,28 +67,20 @@ roundToPlace bd@(BigDecimal v s) dp
 --
 -- >>> display $ measured 3 200
 -- "200."
---
 -- >>> display $ measured 3 4
 -- "4.00"
---
 -- >>> display $ measured 2 400
 -- "4.0 x 10^2"
---
 -- >>> display $ measured 2 430
 -- "430"
---
 -- >>> display $ measured 1 1
 -- "1"
---
 -- >>> display $ constant (3 % 8)
 -- "0.375"
---
 -- >>> display $ constant (4 % 9)
 -- "4/9"
---
 -- >>> display $ measured 2 4.3
 -- "4.3"
---
 display :: Term -> Text
 display (Measured sf bd) = format bd
   where
@@ -132,11 +124,11 @@ displayFull t@(Constant (a :% b)) = display t <> annot
 
 -- | Given a term, return a tuple where the first element is the output of display and the second is an annotation of the type of value. Used in the API.
 --
--- >>> displayInformational (Constant 3)
+-- >>> displayInformational $ constant 3
 -- ("3","constant value")
--- >>> let b = BD.fromString "3.4" in displayInformational (Measured 2 b)
+-- >>> displayInformational $ measured 2 3.4
 -- ("3.4","2 significant figures")
--- >>> let b = BD.fromString "3400" in displayInformational (Measured 3 b)
+-- >>> displayInformational $ measured 3 3400
 -- ("3.40 x 10^3","3 significant figures")
 displayInformational :: Term -> (Text, Text)
 displayInformational t@(Measured sf bd) = (display t, annot)
