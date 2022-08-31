@@ -3,7 +3,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune #-}
 
-module Data.SigFig.Evaluate where
+-- |
+-- This module only contains one function of interest, which is 'evaluate'.
+-- It takes an 'Expr' and evaluates it, applying the correct significant
+-- figure rules. To display the resulting 'Term' that 'evaluate' may return, see 'display'.
+module Data.SigFig.Evaluate (evaluate) where
 
 import Data.BigDecimal (BigDecimal (..))
 import Data.BigDecimal qualified as BD
@@ -15,7 +19,7 @@ import Data.Text qualified as T
 import Data.Tuple.Extra (second)
 import Text.Printf (printf)
 
--- | Given an expression tree, evaluate it and return either an error or result
+-- | Given an expression tree, evaluate it and return either an error or result.
 evaluate :: Expr -> Either Text Term
 evaluate (Leaf a) = Right a
 evaluate (Prec1 xs) = case xs of

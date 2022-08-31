@@ -3,7 +3,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune #-}
 
-module Data.SigFig.Parse where
+module Data.SigFig.Parse
+  ( parse,
+    parse',
+  )
+where
 
 import Control.Monad (when)
 import Data.Bifunctor (first)
@@ -15,9 +19,11 @@ import Data.Text qualified as T
 import GHC.Real (Ratio ((:%)), (%))
 import Text.Parsec hiding (parse)
 import Text.Parsec qualified as P
+import Prelude hiding (exponent)
 
 type Parses = Parsec Text ()
 
+-- | Represents signs.
 data Sign = Positive | Negative
   deriving (Show, Eq)
 
@@ -40,86 +46,92 @@ toOp '*' = Mul
 toOp '/' = Div
 toOp _ = error "should be guarded by parser"
 
+-- | Parse an optional sign preceding a value.
 sign :: Parses Sign
 sign =
   do char '-'; return Negative
     <|> do char '+'; return Positive
     <|> return Positive
 
-signF :: Num a => Sign -> (a -> a)
-signF Positive = id
-signF Negative = negate
+signToFunc :: Num a => Sign -> (a -> a)
+signToFunc Positive = id
+signToFunc Negative = negate
 
 -- | Parses at least 1 digit, as Text.
 digits :: Parses Text
 digits = T.pack <$> many1 digit
 
--- number of sig figs for a non-negative integer if it was typed as text
+-- | Get the number of significant figures for a
+-- non-negative integer if it was typed as text.
 numSigFigsNNIntTextual :: Text -> Integer
 numSigFigsNNIntTextual t =
   let residue = T.dropAround (== '0') t
    in toInteger $ if T.null residue then 1 else T.length residue
 
+-- | Get the number of significant figures for a
+-- non-negative float if it was typed as text.
 numSigFigsNNFltTextual :: Text -> Integer
 numSigFigsNNFltTextual t =
   let residue = T.dropWhile (== '0') . T.filter (/= '.') $ t
    in toInteger $ if T.null residue then T.count "0" t else T.length residue
 
-integerLike :: Parses Term
-integerLike = do
+-- | Parse an integer which may have a sign.
+integer :: Parses Term
+integer = do
   s <- sign
   digs <- digits
-  return . Measured (numSigFigsNNIntTextual digs) . signF s . BD.fromString . T.unpack $ digs
+  return . Measured (numSigFigsNNIntTextual digs) . signToFunc s . BD.fromString . T.unpack $ digs
 
-floatLike :: Parses Term
-floatLike = do
+-- | Parse a float which may have a sign.
+float :: Parses Term
+float = do
   s <- sign
   ldigs <- option "" digits
   char '.'
   rdigs <- option "" digits
   when (T.null ldigs && T.null rdigs) (unexpected "just a dot")
   let flt = ldigs <> "." <> rdigs
-  return . Measured (numSigFigsNNFltTextual flt) . signF s . BD.fromString . T.unpack $ flt
+  return . Measured (numSigFigsNNFltTextual flt) . signToFunc s . BD.fromString . T.unpack $ flt
 
-sciNotationLike :: Parses Term
-sciNotationLike = do
-  Measured sf coef@(BigDecimal coefValue coefScale) <- try floatLike <|> try integerLike
+sciNotation :: Parses Term
+sciNotation = do
+  Measured sf coef@(BigDecimal coefValue coefScale) <- try float <|> try integer
   char 'e'
-  Measured _ (BigDecimal exp _) <- integerLike
+  Measured _ (BigDecimal exp _) <- integer
   return $ Measured sf $ BD.nf $ coef * 10 ^^ exp
 
 integerConstant :: Parses Term
 integerConstant = do
-  Measured _ (BigDecimal v _) <- integerLike
+  Measured _ (BigDecimal v _) <- integer
   char 'c'
   return . Constant $ v % 1
 
 floatConstant :: Parses Term
 floatConstant = do
-  Measured _ (BigDecimal v s) <- floatLike
+  Measured _ (BigDecimal v s) <- float
   char 'c'
   return . Constant $ v % (10 ^ s)
 
 sciNotationConstant :: Parses Term
 sciNotationConstant = do
-  Measured _ (BigDecimal v s) <- sciNotationLike
+  Measured _ (BigDecimal v s) <- sciNotation
   char 'c'
   return . Constant $ v % (10 ^ s)
 
 leaf :: Parses Expr
 leaf = do
-  l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotationLike, floatLike, integerLike]
+  l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotation, float, integer]
   return $ Leaf l
 
-exponentE :: Parses Expr
-exponentE = do
+exponent :: Parses Expr
+exponent = do
   e <- try do
-    k <- try (btwnParens expr) <|> try leaf
+    k <- try (betweenParens expr) <|> try leaf
     spaces
     string "**"
     spaces
     return k
-  i <- toInteger . BD.value . BD.nf . value <$> try integerLike
+  i <- toInteger . BD.value . BD.nf . value <$> try integer
   when (i < 0) $ unexpected "negative exponent"
   return $ Exp e i
 
@@ -149,8 +161,8 @@ expr :: Parses Expr
 expr =
   try prec1Chain
     <|> try prec2Chain
-    <|> exponentE
-    <|> try (btwnParens expr)
+    <|> exponent
+    <|> try (betweenParens expr)
     <|> try function
     <|> try leaf
 
@@ -160,8 +172,8 @@ fullExpr =
   choice
     [ try prec1Chain <* eof,
       try prec2Chain <* eof,
-      exponentE <* eof,
-      try (btwnParens expr) <* eof,
+      exponent <* eof,
+      try (betweenParens expr) <* eof,
       try function <* eof,
       leaf <* eof
     ]
@@ -189,7 +201,7 @@ precChain validOperands validOperator constructor idOp =
 prec1Chain :: Parses Expr
 prec1Chain =
   precChain
-    [try prec2Chain, exponentE, try $ btwnParens expr, function, leaf]
+    [try prec2Chain, exponent, try $ betweenParens expr, function, leaf]
     (oneOf "+-")
     Prec1
     Add
@@ -198,10 +210,10 @@ prec1Chain =
 prec2Chain :: Parses Expr
 prec2Chain =
   precChain
-    [exponentE, try $ btwnParens expr, function, leaf]
+    [exponent, try $ betweenParens expr, function, leaf]
     (oneOf "*/")
     Prec2
     Mul
 
-btwnParens :: Parses a -> Parses a
-btwnParens p = char '(' *> spaces *> p <* spaces <* char ')'
+betweenParens :: Parses a -> Parses a
+betweenParens p = char '(' *> spaces *> p <* spaces <* char ')'

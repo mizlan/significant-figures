@@ -8,17 +8,24 @@
 --
 -- This module exports everything you need to work with significant figures, including parsing and evaluation.
 module Data.SigFig
-  ( Term (..),
+  ( -- * Types
+    Term (..),
     Op (..),
     Expr (..),
     Function (..),
-    processExpression,
+
+    -- * High-Level Functions
     parseEval,
-    display,
-    displayFull,
-    displayInformational,
     evaluate,
     parse,
+    display,
+    displayInformational,
+    displayFull,
+    processExpression,
+
+    -- * Creating and Manipulating Terms and Expressions
+    measured,
+    constant,
     l,
     lMeasured,
     lConstant,
@@ -28,8 +35,6 @@ module Data.SigFig
     div,
     exp,
     apply,
-    measured,
-    constant,
   )
 where
 
