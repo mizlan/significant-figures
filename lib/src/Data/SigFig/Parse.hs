@@ -3,6 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune #-}
 
+-- |
+-- A module that exports two functions, 'parse' and 'parse'',
+-- to help with turning text into expression trees.
 module Data.SigFig.Parse
   ( parse,
     parse',
