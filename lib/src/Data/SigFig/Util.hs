@@ -34,8 +34,11 @@ rightmostSignificantPlace sf bd =
 -- decimal places. A positive integer means to the left of decimal place,
 -- negative means to the right.
 --
+-- ==== __Examples__
+--
 -- >>> forceDP (-2) (fromRational 123.456)
 -- Measured {numSigFigs = 5, value = 123.46}
+--
 -- >>> forceDP 2 (fromRational 123.456)
 -- Measured {numSigFigs = 1, value = 100}
 forceDP :: Integer -> BigDecimal -> Term
@@ -65,20 +68,29 @@ roundToPlace bd@(BigDecimal v s) dp
 -- significant figures it has, then display it normally. Adds trailing zeroes
 -- if necessary to floats and opts for scientific notation if necessary.
 --
+-- ==== __Examples__
+--
 -- >>> display $ measured 3 200
 -- "200."
+--
 -- >>> display $ measured 3 4
 -- "4.00"
+--
 -- >>> display $ measured 2 400
 -- "4.0 x 10^2"
+--
 -- >>> display $ measured 2 430
 -- "430"
+--
 -- >>> display $ measured 1 1
 -- "1"
+--
 -- >>> display $ constant (3 % 8)
 -- "0.375"
+--
 -- >>> display $ constant (4 % 9)
 -- "4/9"
+--
 -- >>> display $ measured 2 4.3
 -- "4.3"
 display :: Term -> Text
@@ -110,8 +122,11 @@ display (Constant v@(a :% b)) =
 
 -- | Used in the CLI. Not super pretty but gets the job done in terms of displaying enough information.
 --
+-- ==== __Examples__
+--
 -- >>> displayFull (constant 3.45)
 -- "3.45 (const)"
+--
 -- >>> displayFull (measured 3 8500)
 -- "8.50 x 10^3 (3 s.f.)"
 displayFull :: Term -> Text
@@ -124,10 +139,14 @@ displayFull t@(Constant (a :% b)) = display t <> annot
 
 -- | Given a term, return a tuple where the first element is the output of display and the second is an annotation of the type of value. Used in the API.
 --
+-- ==== __Examples__
+--
 -- >>> displayInformational $ constant 3
 -- ("3","constant value")
+--
 -- >>> displayInformational $ measured 2 3.4
 -- ("3.4","2 significant figures")
+--
 -- >>> displayInformational $ measured 3 3400
 -- ("3.40 x 10^3","3 significant figures")
 displayInformational :: Term -> (Text, Text)
