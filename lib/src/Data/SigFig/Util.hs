@@ -12,9 +12,6 @@ import Data.Text qualified as T
 import GHC.Natural (naturalFromInteger)
 import GHC.Real (Ratio ((:%)), (%))
 
-isMeasured (Measured _ _) = True
-isMeasured (Constant _) = False
-
 -- | Get the rightmost significant decimal place given a number of
 -- significant figures @sf@ and a BigDecimal @bd@. It is as if one
 -- were calculating the value for a @Measured sf bd@.

@@ -19,6 +19,9 @@ import Data.Text qualified as T
 import Data.Tuple.Extra (second)
 import Text.Printf (printf)
 
+isMeasured (Measured _ _) = True
+isMeasured (Constant _) = False
+
 -- | Given an expression tree, evaluate it and return either an error or result.
 evaluate :: Expr -> Either Text Term
 evaluate (Leaf a) = Right a
