@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 module Data.SigFig.Parse where
 
@@ -16,6 +17,9 @@ import Text.Parsec hiding (parse)
 import Text.Parsec qualified as P
 
 type Parses = Parsec Text ()
+
+data Sign = Positive | Negative
+  deriving (Show, Eq)
 
 -- | Parse text into either an error message or an expression.
 parse :: Text -> Either Text Expr
@@ -162,8 +166,8 @@ fullExpr =
       leaf <* eof
     ]
 
--- | Generate a chain parser: necessary because sigfig-simplification
--- only occurs on completion of evaluation of such a chain
+-- Generate a chain parser: necessary because sigfig-simplification
+-- only occurs on completion of evaluation of such a chain.
 precChain :: [Parses Expr] -> Parses Char -> ([(Op, Expr)] -> Expr) -> Op -> Parses Expr
 precChain validOperands validOperator constructor idOp =
   do

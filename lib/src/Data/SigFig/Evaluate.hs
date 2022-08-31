@@ -1,6 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 module Data.SigFig.Evaluate where
 
@@ -89,9 +90,6 @@ doOp Add a b = Right $ a + b
 doOp Sub a b = Right $ a - b
 doOp Mul a b = Right $ a * b
 doOp Div a b = if b == 0 then Left "division by zero error" else Right $ a / b
-
-forceSF :: Integer -> BigDecimal -> Term
-forceSF sf' bd = Measured sf' . roundToPlace bd . rightmostSignificantPlace sf' $ bd
 
 evaluateSubtrees :: [(a, Expr)] -> Either Text [(a, Term)]
 evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs

@@ -1,5 +1,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 module Data.SigFig.Util where
 
@@ -14,7 +15,12 @@ import GHC.Real (Ratio ((:%)), (%))
 isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
 
--- negative return value is allowed and meaningful
+-- | Get the rightmost significant decimal place given a number of
+-- significant figures @sf@ and a BigDecimal @bd@. It is as if one
+-- were calculating the value for a @Measured sf bd@.
+--
+-- A negative return value is allowed and meaningful.
+--
 -- >>> rightmostSignificantPlace 2 (BigDecimal 42 1)
 -- -1
 rightmostSignificantPlace :: Integer -> BigDecimal -> Integer
@@ -24,13 +30,26 @@ rightmostSignificantPlace sf bd =
       p = BD.precision v'
    in fromIntegral p - sf - fromIntegral dp
 
+-- | Force a given BigDecimal to have a certain number of significant
+-- decimal places. A positive integer means to the left of decimal place,
+-- negative means to the right.
+--
+-- >>> forceDP (-2) (fromRational 123.456)
+-- Measured {numSigFigs = 5, value = 123.46}
+-- >>> forceDP 2 (fromRational 123.456)
+-- Measured {numSigFigs = 1, value = 100}
 forceDP :: Integer -> BigDecimal -> Term
 forceDP dp bd =
   let res = BD.nf $ roundToPlace bd dp
-   in Measured (fromIntegral (BD.precision res) - fromIntegral (BD.scale res) - dp) res
+   in Measured (max 0 $ fromIntegral (BD.precision res) - fromIntegral (BD.scale res) - dp) res
+
+-- | Force a given BigDecimal to have a certain number of significant figures.
+-- A positive integer means to the left of decimal place, negative means to the right.
+forceSF :: Integer -> BigDecimal -> Term
+forceSF sf' bd = Measured sf' . roundToPlace bd . rightmostSignificantPlace sf' $ bd
 
 -- | Round a BigDecimal to a specified decimal place. A positive integer means
--- to the left of decimal place, negative means to the right
+-- to the left of decimal place, negative means to the right.
 --
 -- >>> roundToPlace (BigDecimal 421 1) (0)
 -- 42
@@ -107,7 +126,7 @@ displayFull t@(Constant (a :% b)) = display t <> annot
   where
     annot = if isTerminating b then " (const)" else " (non-terminating const)"
 
--- | Given a denominator, tell if the decimal expansion of the fraction terminates
+-- Given a denominator, tell if the decimal expansion of the fraction terminates
 isTerminating :: Integer -> Bool
 isTerminating = (== 1) . stripFactor 5 . stripFactor 2
   where
@@ -130,18 +149,3 @@ displayInformational t@(Measured sf bd) = (display t, annot)
 displayInformational t@(Constant (a :% b)) = (display t, annot)
   where
     annot = if isTerminating b then "constant value" else "constant, non-terminating decimal value"
-
-{-
-
-process:
-  1. find rightmost significant digit -> x
-  2. if x /= 0, just print as-is
-  3. if x is in 10s/100s/1000s place etc., convert to sci not
-  4. if x in 10ths/100ths/1000ths etc, add decimal place if needed and zeroes
-
-- as-is
-  - in integer, rightmost significant figure is nonzero
-- add a "." if needed and zero or more trailing zeroes
--
-
--}
