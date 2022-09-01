@@ -4,10 +4,14 @@
 {-# OPTIONS_HADDOCK prune #-}
 
 -- |
--- This module only contains one function of interest, which is 'evaluate'.
+-- This module contains effectively one function of interest, which is 'evaluate'.
 -- It takes an 'Expr' and evaluates it, applying the correct significant
 -- figure rules. To display the resulting 'Term' that 'evaluate' may return, see 'display'.
-module Data.SigFig.Evaluate (evaluate) where
+module Data.SigFig.Evaluate
+  ( evaluate,
+    evaluate',
+  )
+where
 
 import Data.BigDecimal (BigDecimal (..))
 import Data.BigDecimal qualified as BD
@@ -21,6 +25,12 @@ import Text.Printf (printf)
 
 isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
+
+-- | Like 'evaluate', but assume the result is a valid term and crash otherwise.
+evaluate' :: Expr -> Term
+evaluate' s = case evaluate s of
+  Left e -> error . T.unpack $ "evaluate' crashed because: " <> e
+  Right e -> e
 
 -- | Given an expression tree, evaluate it and return either an error or result.
 evaluate :: Expr -> Either Text Term

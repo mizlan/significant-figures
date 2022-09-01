@@ -36,7 +36,7 @@ parse = textify . P.parse fullExpr ""
   where
     textify = first (T.pack . show)
 
--- | Parse text into an expression, or error if it could not parse successfully.
+-- | Like 'parse', but assume the result is a valid expression and crash otherwise.
 parse' :: Text -> Expr
 parse' s = case parse s of
   Left e -> error . T.unpack $ "parse' crashed because: " <> e

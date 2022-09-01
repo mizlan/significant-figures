@@ -16,8 +16,10 @@ module Data.SigFig
 
     -- * High-Level Functions
     parseEval,
-    evaluate,
     parse,
+    parse',
+    evaluate,
+    evaluate',
     display,
     displayInformational,
     displayFull,
