@@ -26,6 +26,7 @@ jobs:
             cabal-store-${{ matrix.os }}-
       - run: cabal build
   sdist:
+    runs-on: ubuntu-latest
     steps:
       - run: mv "$(cabal sdist significant-figures | tail -1)" build.tar.gz
       - uses: actions/upload-artifact@v3
