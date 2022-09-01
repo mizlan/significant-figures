@@ -1,0 +1,34 @@
+on: workflow_dispatch
+name: build-and-sdist
+jobs:
+  build:
+    name: Build for major OSes
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ghc: ['9.4.2', '9.2.4', '9.0.2', '8.10.7', '8.8.4']
+        os: [windows-latest, ubuntu-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        id: setup-haskell
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: '3.6.2.0'
+      - run: cabal update
+      - run: cabal freeze
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+          key: cabal-store-${{ matrix.os }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            cabal-store-${{ matrix.os }}-
+      - run: cabal build
+  sdist:
+    steps:
+      - run: mv "$(cabal sdist significant-figures | tail -1)" build.tar.gz
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sdist
+          path: build.tar.gz
