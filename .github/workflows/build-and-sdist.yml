@@ -28,6 +28,11 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        with:
+          ghc-version: '8.10.7'
+          cabal-version: '3.6.2.0'
       - run: mv "$(cabal sdist significant-figures | tail -1)" build.tar.gz
       - uses: actions/upload-artifact@v3
         with:
