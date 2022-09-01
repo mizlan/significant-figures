@@ -1,6 +1,6 @@
 # Significant Figures
 
-![website](https://user-images.githubusercontent.com/44309097/187833156-e19bd946-576d-4785-ba7d-7f6cdcd2fff7.png)
+![website](https://user-images.githubusercontent.com/44309097/187833301-db2c2a89-2562-42b3-a746-8c9a41a2bcae.png)
 
 This repository contains:
 * code for the `Data.SigFig` module that contains a variety of functions to
