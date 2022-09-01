@@ -1,7 +1,2 @@
 packages: lib
          ,web
-
-source-repository-package
-    type: git
-    location: https://github.com/mizlan/HasBigDecimal
-    tag: cc08cdd4736f79f4eb4c0f2d7806283fcb3dc60c

@@ -32,7 +32,7 @@ library
   build-depends:    base ^>=4.14.3.0
                    ,text
                    ,parsec
-                   ,HasBigDecimal
+                   ,HasBigDecimal ^>=0.2.0.0
                    ,extra
 
 executable significant-figures-cli
@@ -42,7 +42,7 @@ executable significant-figures-cli
   build-depends:    base ^>=4.14.3.0
                    ,text
                    ,parsec
-                   ,HasBigDecimal
+                   ,HasBigDecimal ^>=0.2.0.0
                    ,extra
                    ,haskeline ==0.8.1.3
                    ,significant-figures
