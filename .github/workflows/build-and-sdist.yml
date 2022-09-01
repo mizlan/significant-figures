@@ -24,7 +24,7 @@ jobs:
           key: cabal-store-${{ matrix.os }}-${{ hashFiles('cabal.project.freeze') }}
           restore-keys: |
             cabal-store-${{ matrix.os }}-
-      - run: cabal build
+      - run: cabal build significant-figures
   sdist:
     runs-on: ubuntu-latest
     steps:
