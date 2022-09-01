@@ -1,16 +1,9 @@
 # Significant Figures
 
-Haskell ship! v0.1.0.0 of significant-figures is just about ready for release, a library (+ API/CLI) that makes calculating expressions with significant figures super easy! Has functions for parsing and evaluating expressions and displaying terms. Significant figures are annoying to work with because of the weird way rounding works. Read the README to learn more!
-
-![website](https://user-images.githubusercontent.com/44309097/187833301-db2c2a89-2562-42b3-a746-8c9a41a2bcae.png)
-
-This repository contains:
-* code for the `Data.SigFig` module that contains a variety of functions to
-  parse and evaluate expressions involving significant figures. This will be
-  published to Hackage at some point.
-* code for a [→ frontend](https://significant-figures.herokuapp.com), along
-  with a simple HTTP API
-* code for a minimal CLI using Haskeline ([→ wiki](https://github.com/judah/haskeline/wiki)).
+This repository contains the `Data.SigFig` module that contains a variety of
+functions to parse and evaluate expressions involving significant figures. This
+will be published to Hackage at some point (namely when HasBigDecimal gets a
+new release). It also contains an executable CLI using Haskeline.
 
 ## Supported Operations
 
@@ -53,14 +46,10 @@ expr> 0.650 * 4000.
 2.60 x 10^3 (3 s.f.)
 ```
 
-## API
+## Manipulation of Expressions and Terms
 
-The API is simple; there is an endpoint at
-[→ `/calc`](https://significant-figures.herokuapp.com/calc). You can perform either:
-* a `GET` request with a single URL-encoded parameter `"expr"` that corresponds
-  with the expression string
-* a `POST` request with a JSON body with a single field `"input"` that
-  corresponds with the expression string.
+The `Data.SigFig.Types` module contains some functions to help with
+manipulating terms and expressions in Haskell, skipping the process of parsing.
 
 ## Reminders
 
