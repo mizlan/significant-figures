@@ -1,7 +1,5 @@
 # Significant Figures
 
-Haskell ship! v0.1.0.0 of significant-figures is just about ready for release, a library (+ API/CLI) that makes calculating expressions with significant figures super easy! Has functions for parsing and evaluating expressions and displaying terms. Significant figures are annoying to work with because of the weird way rounding works. Read the README to learn more!
-
 ![website](https://user-images.githubusercontent.com/44309097/187833301-db2c2a89-2562-42b3-a746-8c9a41a2bcae.png)
 
 This repository contains:
