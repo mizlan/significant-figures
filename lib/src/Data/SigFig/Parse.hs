@@ -16,6 +16,8 @@ import Control.Monad (when)
 import Data.Bifunctor (first)
 import Data.BigDecimal (BigDecimal (BigDecimal))
 import Data.BigDecimal qualified as BD
+import Data.Foldable (foldr')
+import Data.Ratio (denominator, numerator)
 import Data.SigFig.Types
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -128,15 +130,39 @@ leaf = do
 
 exponent :: Parses Expr
 exponent = do
-  e <- try do
-    k <- try (betweenParens expr) <|> try leaf
-    spaces
-    string "**"
-    spaces
-    return k
-  i <- toInteger . BD.value . BD.nf . value <$> try integer
-  when (i < 0) $ unexpected "negative exponent"
-  return $ Exp e i
+  (base, e) <- try do
+    base <- operand
+    op <- operator
+    e <- operand
+    pure (base, e)
+  e' <- exprNNInt e
+  exps <- many do
+    op <- operator
+    term' <- operand
+    exprNNInt term'
+  pure $ foldr' (flip Exp) base (e' : exps)
+  where
+    operand = choice [try $ betweenParens expr <|> try leaf] <* spaces
+    operator = string "**" <* spaces
+    toNNInt (Measured sf (BigDecimal v s)) =
+      if s == 0 && v >= 0 then Just v else Nothing
+    toNNInt (Constant a) =
+      if denominator a == 1 && a >= 0 then Just (numerator a) else Nothing
+    exprNNInt e = case e of
+      Leaf k | Just n <- toNNInt k -> pure n
+      _ -> unexpected "non-integer exponent"
+
+-- exponent :: Parses Expr
+-- exponent = do
+--   e <- try do
+--     k <- try (betweenParens expr) <|> try leaf
+--     spaces
+--     string "**"
+--     spaces
+--     return k
+--   i <- toInteger . BD.value . BD.nf . value <$> try integer
+--   when (i < 0) $ unexpected "negative exponent"
+--   return $ Exp e i
 
 -- | A list of all the functions available.
 funcMap :: [(Function, Text)]
