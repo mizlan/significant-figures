@@ -94,7 +94,7 @@ float = do
   ldigs <- option "" digits
   char '.'
   rdigs <- option "" digits
-  when (T.null ldigs && T.null rdigs) (unexpected "just a dot")
+  when (T.null ldigs && T.null rdigs) (unexpected "dot without other digits")
   let flt = ldigs <> "." <> rdigs
   return . Measured (numSigFigsNNFltTextual flt) . signToFunc s . BD.fromString . T.unpack $ flt
 
