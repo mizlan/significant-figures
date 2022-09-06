@@ -86,7 +86,7 @@ of parsing.
 
   `exp(000.0) = 10 ^ (100c * 0.000) = 1`
 
-  `exp(0.000) = 10 ^ (  1c * 0.000) = 1.00`
+  `exp(0.000) = 10 ^ (1c * 0.000) = 1.00`
 
   A patch that resolves this will involve storing another piece of metadata for
   each value: its rightmost (or leftmost, given the total number of significant
