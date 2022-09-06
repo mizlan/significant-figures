@@ -1,9 +1,8 @@
 # Significant Figures
 
 This repository contains the `Data.SigFig` module that contains a variety of
-functions to parse and evaluate expressions involving significant figures. This
-will be published to Hackage at some point (namely when HasBigDecimal gets a
-new release). It also contains an executable CLI using Haskeline.
+functions to parse and evaluate expressions involving significant figures. It
+also contains an executable CLI using Haskeline.
 
 ## Supported Operations
 
@@ -49,7 +48,8 @@ expr> 0.650 * 4000.
 ## Manipulation of Expressions and Terms
 
 The `Data.SigFig.Types` module contains some functions to help with
-manipulating terms and expressions in Haskell, skipping the process of parsing.
+manipulating terms and expressions in Haskell, allowing one to skip the process
+of parsing.
 
 ## Reminders
 
@@ -88,9 +88,9 @@ manipulating terms and expressions in Haskell, skipping the process of parsing.
 
   `exp(0.000) = 10 ^ (  1c * 0.000) = 1.00`
 
-  I may work on a patch for this if I think it necessary. This will involve
-  storing another piece of metadata for each value: its rightmost (or leftmost,
-  given the total number of significant figures) significant decimal place.
+  A patch that resolves this will involve storing another piece of metadata for
+  each value: its rightmost (or leftmost, given the total number of significant
+  figures) significant decimal place.
 
   Since I have concluded there is no trivial general solution to this, I
   have chosen to retain the number of significant figures for 0-values, such
