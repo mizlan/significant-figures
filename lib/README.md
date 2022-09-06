@@ -13,9 +13,9 @@ also contains an executable CLI using Haskeline.
 | multiplication | `4.8 * 5.2` | `25` |
 | division | `4.00 / 3.1` | `1.3` |
 | constants | `2c * 572.138` | `1144.28` |
-| logarithms (`log(10, m)`) where `m` is measured | `log(10)` | `1.0` |
-| antilogarithms (`10 ^ m`) where `m` is measured | `exp(6.24)` | `1.7 x 10^6` |
-| exponentiation (`m ^ n`) where `m` is measured | `4.0 ** 4` | `2.6 x 10^2` |
+| logarithms | `log(10)` | `1.0` |
+| antilogarithms | `exp(6.24)` | `1.7 x 10^6` |
+| exponentiation | `4.0 ** 4` | `2.6 x 10^2` |
 
 > I created the distinction between antilogarithm and exponentiation to
 > distinguish between which value is measured and which is constant. You'd use
