@@ -12,7 +12,7 @@ also contains an executable CLI using Haskeline.
 | subtraction | `5.1 - 2` | `3` |
 | multiplication | `4.8 * 5.2` | `25` |
 | division | `4.00 / 3.1` | `1.3` |
-| constants | `2c * 572.138` | `1144.28` |
+| constants | `2c * 4.2` | `8.4` |
 | logarithms | `log(10)` | `1.0` |
 | antilogarithms | `exp(6.24)` | `1.7 x 10^6` |
 | exponentiation | `4.0 ** 4` | `2.6 x 10^2` |
