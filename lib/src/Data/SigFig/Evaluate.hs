@@ -20,7 +20,7 @@ import Data.SigFig.Types
 import Data.SigFig.Util
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Tuple.Extra (second)
+import Control.Arrow (second)
 import Text.Printf (printf)
 
 isMeasured (Measured _ _) = True

@@ -1,4 +1,4 @@
-cabal-version:      3.6
+cabal-version:      2.4
 name:               significant-figures
 version:            0.1.0.0
 synopsis:           Calculate expressions involving significant figures.
@@ -31,21 +31,19 @@ library
                    ,BlockArguments
                    ,ImportQualifiedPost
   build-depends:    base >=4.14.3.0 && <5
-                   ,text
-                   ,parsec
+                   ,text >=1.2 && <3
+                   ,parsec >=3.1 && <4
                    ,HasBigDecimal ^>=0.2.0.0
-                   ,extra
 
 executable significant-figures-cli
   default-language: Haskell2010
   hs-source-dirs:   app
   main-is:          Main.hs
-  build-depends:    base >=4.14.3.0 && <5
+  build-depends:    base
                    ,text
                    ,parsec
-                   ,HasBigDecimal ^>=0.2.0.0
-                   ,extra
-                   ,haskeline ==0.8.1.3
+                   ,HasBigDecimal
+                   ,haskeline >=0.8.1.3
                    ,significant-figures
   if !os(windows) {
     build-depends:  terminfo >=0.4.1.5
@@ -56,7 +54,7 @@ test-suite significant-figures-test
   type:             exitcode-stdio-1.0
   hs-source-dirs:   tests
   main-is:          SigFigTest.hs
-  build-depends:    base >=4.14.3.0 && <5
+  build-depends:    base
                    ,text
                    ,tasty ^>=1.4.2.3
                    ,tasty-hunit
