@@ -27,6 +27,7 @@ library
                    ,Data.SigFig.Parse
                    ,Data.SigFig.Types
                    ,Data.SigFig.Util
+                   ,Data.SigFig.PrettyPrint
   other-extensions: OverloadedStrings
                    ,BlockArguments
                    ,ImportQualifiedPost
