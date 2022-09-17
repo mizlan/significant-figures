@@ -22,9 +22,18 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Control.Arrow (second)
 import Text.Printf (printf)
+import GHC.Real (denominator, numerator)
 
 isMeasured (Measured _ _) = True
 isMeasured (Constant _) = False
+
+toNNInt (Measured sf (BigDecimal v s)) =
+  if s == 0 && v >= 0 then Just v else Nothing
+toNNInt (Constant a) =
+  if denominator a == 1 && a >= 0 then Just (numerator a) else Nothing
+exprNNInt e
+  | Just n <- toNNInt e = pure n
+  | otherwise = Left "non-integer exponent"
 
 -- | Like 'evaluate', but assume the result is a valid term and crash otherwise.
 evaluate' :: Expr -> Term
@@ -61,9 +70,10 @@ evaluate (Prec2 xs) = case xs of
          in Right . forceSF min $ fromRational computed
 evaluate (Exp b e) = do
   res <- evaluate b
+  exp <- evaluate e >>= exprNNInt
   case res of
-    (Measured sf bd) -> Right $ forceSF sf (bd ^ e)
-    (Constant a) -> Right . Constant $ a ^ e
+    (Measured sf bd) -> Right $ forceSF sf (bd ^ exp)
+    (Constant a) -> Right . Constant $ a ^ exp
 evaluate (Apply Log10 e) = do
   res <- evaluate e
   case res of

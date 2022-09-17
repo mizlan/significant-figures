@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune #-}
 
@@ -17,7 +18,6 @@ import Data.Bifunctor (first)
 import Data.BigDecimal (BigDecimal (BigDecimal))
 import Data.BigDecimal qualified as BD
 import Data.Foldable (foldr')
-import Data.Ratio (denominator, numerator)
 import Data.SigFig.Types
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -34,7 +34,7 @@ data Sign = Positive | Negative
 
 -- | Parse text into either an error message or an expression.
 parse :: Text -> Either Text Expr
-parse = textify . P.parse fullExpr ""
+parse = textify . P.parse expr ""
   where
     textify = first (T.pack . show)
 
@@ -128,41 +128,41 @@ leaf = do
   l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotation, float, integer]
   return $ Leaf l
 
-exponent :: Parses Expr
-exponent = do
-  (base, e) <- try do
-    base <- operand
-    op <- operator
-    e <- operand
-    pure (base, e)
-  e' <- exprNNInt e
-  exps <- many do
-    op <- operator
-    term' <- operand
-    exprNNInt term'
-  pure $ foldr' (flip Exp) base (e' : exps)
+factor :: Parses Expr
+factor = do
+  operand `chainl1` operator
   where
-    operand = choice [try $ betweenParens expr <|> try leaf] <* spaces
-    operator = string "**" <* spaces
-    toNNInt (Measured sf (BigDecimal v s)) =
-      if s == 0 && v >= 0 then Just v else Nothing
-    toNNInt (Constant a) =
-      if denominator a == 1 && a >= 0 then Just (numerator a) else Nothing
-    exprNNInt e = case e of
-      Leaf k | Just n <- toNNInt k -> pure n
-      _ -> unexpected "non-integer exponent"
+    operand = choice [try $ betweenParens expr, try leaf, function] <* spaces
+    operator = do
+      try $ string "**" <* spaces
+      pure Exp
 
--- exponent :: Parses Expr
--- exponent = do
---   e <- try do
---     k <- try (betweenParens expr) <|> try leaf
---     spaces
---     string "**"
---     spaces
---     return k
---   i <- toInteger . BD.value . BD.nf . value <$> try integer
---   when (i < 0) $ unexpected "negative exponent"
---   return $ Exp e i
+term :: Parses Expr
+term = do
+  factor `chainr1` operator
+  where
+    operator = do
+      op <- toOp <$> oneOf "*/" <* spaces
+      pure $
+        \a -> \case
+          Prec2 xs -> Prec2 $ (op, a) : xs
+          o -> Prec2 [(Mul, a), (op, o)]
+
+expr :: Parses Expr
+expr = do
+  term `chainr1` operator
+  where
+    operator = do
+      op <- toOp <$> oneOf "+-" <* spaces
+      pure $
+        \a -> \case
+          Prec1 xs -> Prec1 $ (op, a) : xs
+          o -> Prec1 [(Add, a), (op, o)]
+
+-- ❯ parseEval "344 ** 2 ** 4"
+-- Right (Measured {numSigFigs = 3, value = 194000000000000000000})
+-- ❯ (344 ^ 2) ^ 4
+-- 196095460708571938816
 
 -- | A list of all the functions available.
 funcMap :: [(Function, Text)]
@@ -184,65 +184,6 @@ genFuncParsers = do
 -- | Parses a function application.
 function :: Parses Expr
 function = choice genFuncParsers
-
--- | Parses any expression.
-expr :: Parses Expr
-expr =
-  try prec1Chain
-    <|> try prec2Chain
-    <|> exponent
-    <|> try (betweenParens expr)
-    <|> try function
-    <|> try leaf
-
--- | Parses a full expression.
-fullExpr :: Parses Expr
-fullExpr =
-  choice
-    [ try prec1Chain <* eof,
-      try prec2Chain <* eof,
-      exponent <* eof,
-      try (betweenParens expr) <* eof,
-      try function <* eof,
-      leaf <* eof
-    ]
-
--- Generate a chain parser: necessary because sigfig-simplification
--- only occurs on completion of evaluation of such a chain.
-precChain :: [Parses Expr] -> Parses Char -> ([(Op, Expr)] -> Expr) -> Op -> Parses Expr
-precChain validOperands validOperator constructor idOp =
-  do
-    term <- operand
-    op <- operator
-    term' <- operand
-    rest [(toOp op, term'), (idOp, term)]
-  where
-    operand = choice validOperands <* spaces
-    operator = validOperator <* spaces
-    rest terms =
-      do
-        op <- operator
-        term' <- operand
-        rest ((toOp op, term') : terms)
-        <|> (pure . constructor $ reverse terms)
-
--- | Parse a precendence-2 chain (of both addition or subtraction)
-prec1Chain :: Parses Expr
-prec1Chain =
-  precChain
-    [try prec2Chain, exponent, try $ betweenParens expr, function, leaf]
-    (oneOf "+-")
-    Prec1
-    Add
-
--- | Parse a precendence-2 chain (of both multiplication or division)
-prec2Chain :: Parses Expr
-prec2Chain =
-  precChain
-    [exponent, try $ betweenParens expr, function, leaf]
-    (oneOf "*/")
-    Prec2
-    Mul
 
 betweenParens :: Parses a -> Parses a
 betweenParens p = char '(' *> spaces *> p <* spaces <* char ')'

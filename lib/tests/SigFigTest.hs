@@ -197,8 +197,8 @@ createExprTests =
       mulRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Mul, Leaf $ Constant 4.2), (Mul, Leaf $ Measured 4 2.2)]
       divLhs = div [lMeasured 2 3.0, lConstant 4.2]
       divRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Div, Leaf $ Constant 4.2)]
-      expLhs = exp mulLhs 2
-      expRhs = Exp mulRhs 2
+      expLhs = exp mulLhs (lConstant 2)
+      expRhs = Exp mulRhs (lConstant 2)
    in testGroup
         "creating expressions"
         [ testCase "basic" $

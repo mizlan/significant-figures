@@ -92,7 +92,7 @@ div [] = Prec2 []
 div (x : xs) = Prec2 $ (Mul, x) : zip (repeat Div) xs
 
 -- | Take an 'Expr' to the power of an integer. Equivalent to 'Exp'.
-exp :: Expr -> Integer -> Expr
+exp :: Expr -> Expr -> Expr
 exp = Exp
 
 -- | Apply a function to an 'Expr'. Equivalent to 'Apply'.
@@ -115,8 +115,8 @@ data Expr
     Prec1 [(Op, Expr)]
   | -- | Operation of "Precedence 2": multiplication and division
     Prec2 [(Op, Expr)]
-  | -- | Exponentiation with a constant integer exponent
-    Exp Expr Integer
+  | -- | Exponentiation with a constant exponent
+    Exp Expr Expr
   | -- | Application of a function to an expression argument
     Apply Function Expr
   deriving (Show, Eq)
