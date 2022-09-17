@@ -123,16 +123,16 @@ sciNotationConstant = do
   char 'c'
   return . Constant $ v % (10 ^ s)
 
-leaf :: Parses Expr
-leaf = do
+literal :: Parses Expr
+literal = do
   l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotation, float, integer]
-  return $ Leaf l
+  return $ Literal l
 
 factor :: Parses Expr
 factor = do
   operand `chainl1` operator
   where
-    operand = choice [try $ betweenParens expr, try leaf, function] <* spaces
+    operand = choice [try $ betweenParens expr, try literal, function] <* spaces
     operator = do
       try $ string "**" <* spaces
       pure Exp

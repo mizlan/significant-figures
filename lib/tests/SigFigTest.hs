@@ -190,13 +190,13 @@ complexExpressions =
 
 createExprTests =
   let addLhs = add [lMeasured 2 3.0, lConstant 4.2]
-      addRhs = Prec1 [(Add, Leaf $ Measured 2 (BigDecimal 3 0)), (Add, Leaf $ Constant 4.2)]
+      addRhs = Prec1 [(Add, Literal $ Measured 2 (BigDecimal 3 0)), (Add, Literal $ Constant 4.2)]
       subLhs = sub [lMeasured 2 3.0, lConstant 4.2]
-      subRhs = Prec1 [(Add, Leaf $ Measured 2 (BigDecimal 3 0)), (Sub, Leaf $ Constant 4.2)]
+      subRhs = Prec1 [(Add, Literal $ Measured 2 (BigDecimal 3 0)), (Sub, Literal $ Constant 4.2)]
       mulLhs = mul [lMeasured 2 3.0, lConstant 4.2, lMeasured 4 2.2]
-      mulRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Mul, Leaf $ Constant 4.2), (Mul, Leaf $ Measured 4 2.2)]
+      mulRhs = Prec2 [(Mul, Literal $ Measured 2 (BigDecimal 3 0)), (Mul, Literal $ Constant 4.2), (Mul, Literal $ Measured 4 2.2)]
       divLhs = div [lMeasured 2 3.0, lConstant 4.2]
-      divRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Div, Leaf $ Constant 4.2)]
+      divRhs = Prec2 [(Mul, Literal $ Measured 2 (BigDecimal 3 0)), (Div, Literal $ Constant 4.2)]
       expLhs = exp mulLhs (lConstant 2)
       expRhs = Exp mulRhs (lConstant 2)
    in testGroup
