@@ -14,3 +14,6 @@ precedence = \case
   Exp {} -> 3
   Prec2 {} -> 2
   Prec1 {} -> 1
+
+printTerm :: Term -> Text
+printTerm = display
