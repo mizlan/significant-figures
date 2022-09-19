@@ -3,10 +3,13 @@
 
 module Main where
 
+import Control.Applicative (liftA2)
+import Control.Monad (liftM)
 import Data.BigDecimal
 import Data.Either (isLeft)
 import Data.Ratio
-import Data.SigFig
+import Data.SigFig hiding (Function)
+import Data.SigFig qualified as S
 import Data.SigFig.PrettyPrint (prettyPrint)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -15,11 +18,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Prelude hiding (div, exp)
+import Prelude qualified as P
 
 main :: IO ()
 main = defaultMain tests
 
-instance Arbitrary Op where
+instance Arbitrary S.Op where
+  arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary S.Function where
   arbitrary = arbitraryBoundedEnum
 
 arbitraryRational :: Gen Rational
@@ -28,18 +35,42 @@ arbitraryRational = do
   y <- getNonZero <$> arbitrary
   pure $ x % y
 
+arbitraryRationalTerminating :: Gen Rational
+arbitraryRationalTerminating = do
+  x <- arbitrarySizedIntegral
+  fac2 <- arbitrarySizedNatural
+  fac5 <- arbitrarySizedNatural
+  pure $ x % (fac2 * fac5)
+
 length2OrMoreList :: Arbitrary a => Gen [a]
 length2OrMoreList = do
   s <- getSize
   n <- chooseInt (2, max s 2)
   vector n
 
-instance Arbitrary Expr where
-  arbitrary =
+instance Arbitrary S.Term
+-- TODO extract minimum possible # of sigfigs for a rational number
+
+genExpr = sized genExpr'
+
+genExpr' 0 = fmap S.Literal arbitrary
+genExpr' n
+  | n > 0 =
     oneof
-      []
-    where
-      arbitraryLiteral = oneof []
+      [ add <$> composite,
+        sub <$> composite,
+        div <$> composite,
+        mul <$> composite,
+        exp <$> subexpr <*> subexpr,
+        apply <$> arbitrary <*> subexpr
+      ]
+  where
+    composite = length2OrMoreList
+    subexpr = genExpr' (n `P.div` 2)
+genExpr' _ = error "negative size"
+
+instance Arbitrary S.Expr where
+  arbitrary = undefined
 
 inverse =
   testProperty

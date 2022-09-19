@@ -105,7 +105,7 @@ data Function
     Log10
   | -- | The function @exp()@ in expressions.
     Antilog10
-  deriving (Show, Eq)
+  deriving (Show, Eq, Bounded, Enum)
 
 -- | A datatype to represent (not-yet-evaluated) expressions. Use 'Data.SigFig.Parse.parse' to create such an expression from text.
 data Expr
