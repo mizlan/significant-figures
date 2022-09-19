@@ -7,15 +7,46 @@ import Data.BigDecimal
 import Data.Either (isLeft)
 import Data.Ratio
 import Data.SigFig
+import Data.SigFig.PrettyPrint (prettyPrint)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Natural (naturalFromInteger)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 import Prelude hiding (div, exp)
 
 main :: IO ()
 main = defaultMain tests
+
+instance Arbitrary Op where
+  arbitrary = arbitraryBoundedEnum
+
+arbitraryRational :: Gen Rational
+arbitraryRational = do
+  x <- arbitrarySizedIntegral
+  y <- getNonZero <$> arbitrary
+  pure $ x % y
+
+length2OrMoreList :: Arbitrary a => Gen [a]
+length2OrMoreList = do
+  s <- getSize
+  n <- chooseInt (2, max s 2)
+  vector n
+
+instance Arbitrary Expr where
+  arbitrary =
+    oneof
+      []
+    where
+      arbitraryLiteral = oneof []
+
+inverse =
+  testProperty
+    "pretty-printing is the inverse of parsing"
+    inverseProp
+
+inverseProp e = (parse . prettyPrint) e == Right e
 
 tests :: TestTree
 tests =

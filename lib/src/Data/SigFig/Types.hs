@@ -51,7 +51,7 @@ data Op
   | Sub
   | Mul
   | Div
-  deriving (Show, Eq)
+  deriving (Show, Eq, Bounded, Enum)
 
 -- | Create a leaf node out of a term, like a "singleton".
 l :: Term -> Expr

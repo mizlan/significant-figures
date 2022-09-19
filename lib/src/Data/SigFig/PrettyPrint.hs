@@ -23,10 +23,10 @@ precedence = \case
 -- the only time we don't need parentheses is with leaf or if child is higher precedence
 
 precede :: Int -> Op -> Expr -> Text
-precede prec Add = (" + " <>) . prettyPrint prec
-precede prec Sub = (" - " <>) . prettyPrint prec
-precede prec Mul = (" * " <>) . prettyPrint prec
-precede prec Div = (" / " <>) . prettyPrint prec
+precede prec Add = (" + " <>) . prettyPrintPrec prec
+precede prec Sub = (" - " <>) . prettyPrintPrec prec
+precede prec Mul = (" * " <>) . prettyPrintPrec prec
+precede prec Div = (" / " <>) . prettyPrintPrec prec
 
 printTerm :: Term -> Text
 printTerm (Measured sf bd) = format bd
@@ -58,16 +58,19 @@ printTerm (Constant v@(a :% b)) =
 conditionallyAddParens :: Int -> Int -> Text -> Text
 conditionallyAddParens outer inner t = if inner > outer then t else "(" <> t <> ")"
 
-printFunc Log10 x = "log(" <> prettyPrint 0 x <> ")"
-printFunc Antilog10 x = "exp(" <> prettyPrint 0 x <> ")"
+printFunc Log10 x = "log(" <> prettyPrintPrec 0 x <> ")"
+printFunc Antilog10 x = "exp(" <> prettyPrintPrec 0 x <> ")"
 
-prettyPrint :: Int -> Expr -> Text
-prettyPrint prec e =
+prettyPrintPrec :: Int -> Expr -> Text
+prettyPrintPrec prec e =
   let prec' = precedence e
    in case e of
         Literal n -> printTerm n
-        Prec1 ((_, x) : xs) -> conditionallyAddParens prec prec' $ prettyPrint 1 x <> foldMap (uncurry $ precede 1) xs
-        Prec2 ((_, x) : xs) -> conditionallyAddParens prec prec' $ prettyPrint 2 x <> foldMap (uncurry $ precede 2) xs
-        Exp a b -> conditionallyAddParens prec prec' $ prettyPrint 3 a <> " ** " <> prettyPrint 3 b
+        Prec1 ((_, x) : xs) -> conditionallyAddParens prec prec' $ prettyPrintPrec 1 x <> foldMap (uncurry $ precede 1) xs
+        Prec2 ((_, x) : xs) -> conditionallyAddParens prec prec' $ prettyPrintPrec 2 x <> foldMap (uncurry $ precede 2) xs
+        Exp a b -> conditionallyAddParens prec prec' $ prettyPrintPrec 3 a <> " ** " <> prettyPrintPrec 3 b
         Apply a b -> printFunc a b
         _ -> error "ill-formed expression"
+
+prettyPrint :: Expr -> Text
+prettyPrint = prettyPrintPrec 0

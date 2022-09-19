@@ -60,5 +60,7 @@ test-suite significant-figures-test
                    ,tasty ^>=1.4.2.3
                    ,tasty-hunit
                    ,HUnit
+                   ,tasty-quickcheck
+                   ,QuickCheck
                    ,HasBigDecimal
                    ,significant-figures
