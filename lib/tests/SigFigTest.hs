@@ -56,7 +56,7 @@ instance Arbitrary Term where
         arbitraryMeasured
       ]
     where
-      arbitraryConstant = Constant <$> arbitraryRational
+      arbitraryConstant = Constant <$> arbitraryRationalTerminating
       arbitraryMeasured = do
         s <- getSize
         n <- fromRational <$> arbitraryRationalTerminating
