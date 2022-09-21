@@ -5,7 +5,7 @@ module Main where
 
 import Control.Applicative (liftA2)
 import Control.Monad (liftM)
-import Data.BigDecimal
+import Data.BigDecimal hiding (value)
 import Data.Either (isLeft)
 import Data.Ratio
 import Data.SigFig hiding (Function)
@@ -19,6 +19,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Prelude hiding (div, exp)
 import Prelude qualified as P
+import Data.Bitraversable (bisequence)
 
 main :: IO ()
 main = defaultMain tests
@@ -37,10 +38,10 @@ arbitraryRational = do
 
 arbitraryRationalTerminating :: Gen Rational
 arbitraryRationalTerminating = do
-  x <- arbitrarySizedIntegral
-  fac2 <- arbitrarySizedNatural
-  fac5 <- arbitrarySizedNatural
-  pure $ x % (fac2 * fac5)
+  s <- getSize
+  x <- resize (s * 100) arbitrarySizedIntegral
+  (fac2, fac5) <- bisequence (arbitrarySizedNatural, arbitrarySizedNatural) `suchThat` (/= (0, 0))
+  pure $ x % (2 ^ fac2 * 5 ^ fac5)
 
 length2OrMoreList :: Arbitrary a => Gen [a]
 length2OrMoreList = do
@@ -48,13 +49,28 @@ length2OrMoreList = do
   n <- chooseInt (2, max s 2)
   vector n
 
-instance Arbitrary S.Term
--- TODO extract minimum possible # of sigfigs for a rational number
+instance Arbitrary Term where
+  arbitrary =
+    oneof
+      [ arbitraryConstant,
+        arbitraryMeasured
+      ]
+    where
+      arbitraryConstant = Constant <$> arbitraryRational
+      arbitraryMeasured = do
+        s <- getSize
+        n <- fromRational <$> arbitraryRationalTerminating
+        let t = T.pack $ show (n :: BigDecimal)
+        let minSf = T.length $ T.filter (/= '.') t
+        sf <- fromIntegral <$> chooseInt (minSf, s * 5)
+        pure $ Measured sf n
 
+genExpr :: Gen Expr
 genExpr = sized genExpr'
 
-genExpr' 0 = fmap S.Literal arbitrary
+genExpr' :: Int -> Gen Expr
 genExpr' n
+  | n < 2 = S.Literal <$> arbitrary
   | n > 0 =
     oneof
       [ add <$> composite,
@@ -64,13 +80,14 @@ genExpr' n
         exp <$> subexpr <*> subexpr,
         apply <$> arbitrary <*> subexpr
       ]
+  | otherwise = error "negative size"
   where
-    composite = length2OrMoreList
-    subexpr = genExpr' (n `P.div` 2)
-genExpr' _ = error "negative size"
+    n' = n `P.div` 2
+    composite = resize n' length2OrMoreList
+    subexpr = genExpr' n'
 
 instance Arbitrary S.Expr where
-  arbitrary = undefined
+  arbitrary = genExpr
 
 inverse =
   testProperty
@@ -91,7 +108,8 @@ tests =
       singleOpTests,
       orderOfOperations,
       complexExpressions,
-      createExprTests
+      createExprTests,
+      inverse
     ]
 
 -- | Cheese testing by copypasting from repl
