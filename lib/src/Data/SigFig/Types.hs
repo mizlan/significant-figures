@@ -51,11 +51,11 @@ data Op
   | Sub
   | Mul
   | Div
-  deriving (Show, Eq)
+  deriving (Show, Eq, Bounded, Enum)
 
 -- | Create a leaf node out of a term, like a "singleton".
 l :: Term -> Expr
-l = Leaf
+l = Literal
 
 -- | Create a leaf node and construct the 'Measured' value argument at the same time. Convenience function.
 lMeasured :: Integer -> Rational -> Expr
@@ -105,12 +105,12 @@ data Function
     Log10
   | -- | The function @exp()@ in expressions.
     Antilog10
-  deriving (Show, Eq)
+  deriving (Show, Eq, Bounded, Enum)
 
 -- | A datatype to represent (not-yet-evaluated) expressions. Use 'Data.SigFig.Parse.parse' to create such an expression from text.
 data Expr
   = -- | Leaf of an expression
-    Leaf Term
+    Literal Term
   | -- | Operation of "Precedence 1": addition and subtraction
     Prec1 [(Op, Expr)]
   | -- | Operation of "Precedence 2": multiplication and division

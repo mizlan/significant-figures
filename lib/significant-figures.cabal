@@ -27,6 +27,7 @@ library
                    ,Data.SigFig.Parse
                    ,Data.SigFig.Types
                    ,Data.SigFig.Util
+                   ,Data.SigFig.PrettyPrint
   other-extensions: OverloadedStrings
                    ,BlockArguments
                    ,ImportQualifiedPost
@@ -59,5 +60,7 @@ test-suite significant-figures-test
                    ,tasty ^>=1.4.2.3
                    ,tasty-hunit
                    ,HUnit
+                   ,tasty-quickcheck
+                   ,QuickCheck
                    ,HasBigDecimal
                    ,significant-figures

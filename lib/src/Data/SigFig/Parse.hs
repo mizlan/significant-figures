@@ -1,6 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune #-}
 
@@ -123,41 +122,42 @@ sciNotationConstant = do
   char 'c'
   return . Constant $ v % (10 ^ s)
 
-leaf :: Parses Expr
-leaf = do
+literal :: Parses Expr
+literal = do
   l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotation, float, integer]
-  return $ Leaf l
+  return $ Literal l
 
 factor :: Parses Expr
 factor = do
   operand `chainl1` operator
   where
-    operand = choice [try $ betweenParens expr, try leaf, function] <* spaces
+    operand = choice [try $ betweenParens expr, try literal, function] <* spaces
     operator = do
       try $ string "**" <* spaces
       pure Exp
 
 term :: Parses Expr
 term = do
-  factor `chainr1` operator
+  factor `chainl1'` (op, Mul, Prec2)
   where
-    operator = do
-      op <- toOp <$> oneOf "*/" <* spaces
-      pure $
-        \a -> \case
-          Prec2 xs -> Prec2 $ (op, a) : xs
-          o -> Prec2 [(Mul, a), (op, o)]
+    op = toOp <$> oneOf "*/" <* spaces
 
 expr :: Parses Expr
 expr = do
-  term `chainr1` operator
+  term `chainl1'` (op, Add, Prec1)
   where
-    operator = do
-      op <- toOp <$> oneOf "+-" <* spaces
-      pure $
-        \a -> \case
-          Prec1 xs -> Prec1 $ (op, a) : xs
-          o -> Prec1 [(Add, a), (op, o)]
+    op = toOp <$> oneOf "+-" <* spaces
+
+chainl1' :: Parses Expr -> (Parses Op, Op, [(Op, Expr)] -> Expr) -> Parses Expr
+{-# INLINEABLE chainl1' #-}
+chainl1' p (o, i, c) = do x <- p; rest [(i, x)]
+  where
+    rest x =
+      do
+        op <- o
+        y <- p
+        rest $ (op, y) : x
+        <|> pure (if length x > 1 then c (reverse x) else snd $ head x)
 
 -- ❯ parseEval "344 ** 2 ** 4"
 -- Right (Measured {numSigFigs = 3, value = 194000000000000000000})

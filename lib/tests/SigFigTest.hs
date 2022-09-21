@@ -3,19 +3,98 @@
 
 module Main where
 
-import Data.BigDecimal
+import Control.Applicative (liftA2)
+import Control.Monad (liftM)
+import Data.BigDecimal hiding (value)
 import Data.Either (isLeft)
 import Data.Ratio
-import Data.SigFig
+import Data.SigFig hiding (Function)
+import Data.SigFig qualified as S
+import Data.SigFig.PrettyPrint (prettyPrint)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Natural (naturalFromInteger)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 import Prelude hiding (div, exp)
+import Prelude qualified as P
+import Data.Bitraversable (bisequence)
 
 main :: IO ()
 main = defaultMain tests
+
+instance Arbitrary S.Op where
+  arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary S.Function where
+  arbitrary = arbitraryBoundedEnum
+
+arbitraryRational :: Gen Rational
+arbitraryRational = do
+  x <- arbitrarySizedIntegral
+  y <- getNonZero <$> arbitrary
+  pure $ x % y
+
+arbitraryRationalTerminating :: Gen Rational
+arbitraryRationalTerminating = do
+  s <- getSize
+  x <- resize (s * 100) arbitrarySizedIntegral
+  (fac2, fac5) <- bisequence (arbitrarySizedNatural, arbitrarySizedNatural) `suchThat` (/= (0, 0))
+  pure $ x % (2 ^ fac2 * 5 ^ fac5)
+
+length2OrMoreList :: Arbitrary a => Gen [a]
+length2OrMoreList = do
+  s <- getSize
+  n <- chooseInt (2, max s 2)
+  vector n
+
+instance Arbitrary Term where
+  arbitrary =
+    oneof
+      [ arbitraryConstant,
+        arbitraryMeasured
+      ]
+    where
+      arbitraryConstant = Constant <$> arbitraryRationalTerminating
+      arbitraryMeasured = do
+        s <- getSize
+        n <- fromRational <$> arbitraryRationalTerminating
+        let t = T.pack $ show (n :: BigDecimal)
+        let minSf = T.length $ T.filter (/= '.') t
+        sf <- fromIntegral <$> chooseInt (minSf, s * 5)
+        pure $ Measured sf n
+
+genExpr :: Gen Expr
+genExpr = sized genExpr'
+
+genExpr' :: Int -> Gen Expr
+genExpr' n
+  | n < 2 = S.Literal <$> arbitrary
+  | n > 0 =
+    oneof
+      [ add <$> composite,
+        sub <$> composite,
+        div <$> composite,
+        mul <$> composite,
+        exp <$> subexpr <*> subexpr,
+        apply <$> arbitrary <*> subexpr
+      ]
+  | otherwise = error "negative size"
+  where
+    n' = n `P.div` 2
+    composite = resize n' length2OrMoreList
+    subexpr = genExpr' n'
+
+instance Arbitrary S.Expr where
+  arbitrary = genExpr
+
+inverse =
+  testProperty
+    "pretty-printing is the inverse of parsing"
+    inverseProp
+
+inverseProp e = (parse . prettyPrint) e == Right e
 
 tests :: TestTree
 tests =
@@ -29,7 +108,8 @@ tests =
       singleOpTests,
       orderOfOperations,
       complexExpressions,
-      createExprTests
+      createExprTests,
+      inverse
     ]
 
 -- | Cheese testing by copypasting from repl
@@ -190,13 +270,13 @@ complexExpressions =
 
 createExprTests =
   let addLhs = add [lMeasured 2 3.0, lConstant 4.2]
-      addRhs = Prec1 [(Add, Leaf $ Measured 2 (BigDecimal 3 0)), (Add, Leaf $ Constant 4.2)]
+      addRhs = Prec1 [(Add, Literal $ Measured 2 (BigDecimal 3 0)), (Add, Literal $ Constant 4.2)]
       subLhs = sub [lMeasured 2 3.0, lConstant 4.2]
-      subRhs = Prec1 [(Add, Leaf $ Measured 2 (BigDecimal 3 0)), (Sub, Leaf $ Constant 4.2)]
+      subRhs = Prec1 [(Add, Literal $ Measured 2 (BigDecimal 3 0)), (Sub, Literal $ Constant 4.2)]
       mulLhs = mul [lMeasured 2 3.0, lConstant 4.2, lMeasured 4 2.2]
-      mulRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Mul, Leaf $ Constant 4.2), (Mul, Leaf $ Measured 4 2.2)]
+      mulRhs = Prec2 [(Mul, Literal $ Measured 2 (BigDecimal 3 0)), (Mul, Literal $ Constant 4.2), (Mul, Literal $ Measured 4 2.2)]
       divLhs = div [lMeasured 2 3.0, lConstant 4.2]
-      divRhs = Prec2 [(Mul, Leaf $ Measured 2 (BigDecimal 3 0)), (Div, Leaf $ Constant 4.2)]
+      divRhs = Prec2 [(Mul, Literal $ Measured 2 (BigDecimal 3 0)), (Div, Literal $ Constant 4.2)]
       expLhs = exp mulLhs (lConstant 2)
       expRhs = Exp mulRhs (lConstant 2)
    in testGroup

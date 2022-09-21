@@ -43,10 +43,10 @@ evaluate' s = case evaluate s of
 
 -- | Given an expression tree, evaluate it and return either an error or result.
 evaluate :: Expr -> Either Text Term
-evaluate (Leaf a) = Right a
+evaluate (Literal a) = Right a
 evaluate (Prec1 xs) = case xs of
   [] -> Left "should not happen"
-  [(_, Leaf a)] -> Right a
+  [(_, Literal a)] -> Right a
   xs -> do
     evaledSubs <- evaluateSubtrees xs
     computed <- computeUnconstrained evaledSubs 0
@@ -58,7 +58,7 @@ evaluate (Prec1 xs) = case xs of
          in Right . forceDP minDP $ fromRational computed
 evaluate (Prec2 xs) = case xs of
   [] -> Left "should not happen"
-  [(_, Leaf a)] -> Right a
+  [(_, Literal a)] -> Right a
   xs -> do
     evaledSubs <- evaluateSubtrees xs
     computed <- computeUnconstrained evaledSubs 1
