@@ -40,7 +40,8 @@ arbitraryRationalTerminating :: Gen Rational
 arbitraryRationalTerminating = do
   s <- getSize
   x <- resize (s * 100) arbitrarySizedIntegral
-  (fac2, fac5) <- bisequence (arbitrarySizedNatural, arbitrarySizedNatural) `suchThat` (/= (0, 0))
+  fac2 <- arbitrarySizedNatural
+  fac5 <- arbitrarySizedNatural
   pure $ x % (2 ^ fac2 * 5 ^ fac5)
 
 length2OrMoreList :: Arbitrary a => Gen [a]
