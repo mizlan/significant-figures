@@ -60,7 +60,7 @@ instance Arbitrary Term where
       arbitraryMeasured = do
         s <- getSize
         n <- fromRational <$> arbitraryRationalTerminating
-        let t = T.pack $ show (n :: BigDecimal)
+        let t = T.pack $ show n
         let minSf = T.length $ T.filter (/= '.') t
         sf <- fromIntegral <$> chooseInt (minSf, s * 5)
         pure $ Measured sf n
