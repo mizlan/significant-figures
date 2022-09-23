@@ -58,9 +58,7 @@ test-suite significant-figures-test
   build-depends:    base
                    ,text
                    ,tasty ^>=1.4.2.3
-                   ,tasty-hunit
-                   ,HUnit
-                   ,tasty-quickcheck
-                   ,QuickCheck
+                   ,tasty-hunit ^>= 0.10.0.0
+                   ,tasty-quickcheck ^>= 0.10.2
                    ,HasBigDecimal
                    ,significant-figures
