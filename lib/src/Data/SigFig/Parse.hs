@@ -132,9 +132,7 @@ factor = do
   operand `chainl1` operator
   where
     operand = choice [try $ betweenParens expr, try literal, function] <* spaces
-    operator = do
-      try $ string "**" <* spaces
-      pure Exp
+    operator = Exp <$ try (string "**" <* spaces)
 
 term :: Parses Expr
 term = do
