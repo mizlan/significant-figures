@@ -1,0 +1,23 @@
+on: workflow_dispatch
+name: deploy-heroku
+jobs:
+  deploy:
+    name: Deploy to Heroku
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        id: setup-haskell
+        with:
+          ghc-version: '8.10.7'
+          cabal-version: '3.6.2.0'
+      - run: cabal update
+      - run: cabal freeze
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+          key: cabal-store-${{ runner.os }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            cabal-store-${{ runner.os }}-
+      - run: cabal build -O2 exe:significant-figures-api
