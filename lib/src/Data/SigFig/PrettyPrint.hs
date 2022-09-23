@@ -72,5 +72,24 @@ prettyPrintPrec prec e =
         Apply a b -> printFunc a b
         _ -> error "ill-formed expression"
 
+-- | Pretty print an expression, adding parentheses where needed. Text emitted from the
+-- pretty printer is intended to be able to be re-parsed, into the same expression tree.
+--
+-- ==== __Examples__
+--
+-- If you want to create expressions to pretty print, utilize the
+-- functions in 'Data.SigFig.Types' like below to make life easier.
+--
+-- >>> prettyPrint $ lMeasured 3 4.0
+-- "4.00"
+--
+-- >>> prettyPrint $ add [lConstant 3, lMeasured 2 3.5]
+-- "3c + 3.5"
+--
+-- >>> prettyPrint $ add [lConstant 3, mul [lMeasured 2 3.5, lConstant 2.7]]
+-- "3c + 3.5 * 2.7c"
+--
+-- >>> prettyPrint $ mul [lConstant 3, add [lMeasured 2 3.5, lConstant 2.7]]
+-- "3c * (3.5 + 2.7c)"
 prettyPrint :: Expr -> Text
 prettyPrint = prettyPrintPrec 0
