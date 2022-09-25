@@ -33,7 +33,7 @@ data Sign = Positive | Negative
 
 -- | Parse text into either an error message or an expression.
 parse :: Text -> Either Text Expr
-parse = textify . P.parse expr ""
+parse = textify . P.parse (expr <* eof) ""
   where
     textify = first (T.pack . show)
 
