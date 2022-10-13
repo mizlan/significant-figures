@@ -45,6 +45,10 @@ measured sf = Measured sf . fromRational
 constant :: Rational -> Term
 constant = Constant
 
+toConstant :: Term -> Term
+toConstant (Measured _ bd) = Constant $ toRational bd
+toConstant a = a
+
 -- | The types of (infix) operators
 data Op
   = Add
@@ -53,15 +57,15 @@ data Op
   | Div
   deriving (Show, Eq, Bounded, Enum)
 
--- | Create a leaf node out of a term, like a "singleton".
+-- | Create a literal node out of a term, like a "singleton".
 l :: Term -> Expr
 l = Literal
 
--- | Create a leaf node and construct the 'Measured' value argument at the same time. Convenience function.
+-- | Create a literal node and construct the 'Measured' value argument at the same time. Convenience function.
 lMeasured :: Integer -> Rational -> Expr
 lMeasured = (l .) . measured
 
--- | Create a leaf node and construct the 'Constant' value argument at the same time. Convenience function.
+-- | Create a literal node and construct the 'Constant' value argument at the same time. Convenience function.
 lConstant :: Rational -> Expr
 lConstant = l . constant
 
@@ -109,7 +113,7 @@ data Function
 
 -- | A datatype to represent (not-yet-evaluated) expressions. Use 'Data.SigFig.Parse.parse' to create such an expression from text.
 data Expr
-  = -- | Leaf of an expression
+  = -- | Literal term
     Literal Term
   | -- | Operation of "Precedence 1": addition and subtraction
     Prec1 [(Op, Expr)]
