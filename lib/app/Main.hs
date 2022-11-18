@@ -11,7 +11,7 @@ main = runInputT defaultSettings loop
     loop = do
       inp <- getInputLine "expr> "
       case inp of
-        Nothing -> return ()
+        Nothing -> pure ()
         Just expr -> do
           outputStrLn . T.unpack . processExpression . T.pack $ expr
           loop

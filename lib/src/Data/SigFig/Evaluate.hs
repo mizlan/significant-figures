@@ -43,37 +43,37 @@ evaluate' s = case evaluate s of
 
 -- | Given an expression tree, evaluate it and return either an error or result.
 evaluate :: Expr -> Either Text Term
-evaluate (Literal a) = Right a
+evaluate (Literal a) = pure a
 evaluate (Prec1 xs) = case xs of
   [] -> Left "should not happen"
-  [(_, Literal a)] -> Right a
+  [(_, Literal a)] -> pure a
   xs -> do
     evaledSubs <- evaluateSubtrees xs
     computed <- computeUnconstrained evaledSubs 0
     let measured = filter (isMeasured . snd) evaledSubs
     if null measured
-      then Right $ Constant computed
+      then pure $ Constant computed
       else
         let minDP = maximum $ [rightmostSignificantPlace sf bd | (_, Measured sf bd) <- measured]
-         in Right . forceDP minDP $ fromRational computed
+         in pure . forceDP minDP $ fromRational computed
 evaluate (Prec2 xs) = case xs of
   [] -> Left "should not happen"
-  [(_, Literal a)] -> Right a
+  [(_, Literal a)] -> pure a
   xs -> do
     evaledSubs <- evaluateSubtrees xs
     computed <- computeUnconstrained evaledSubs 1
     let measured = filter (isMeasured . snd) evaledSubs
     if null measured
-      then Right $ Constant computed
+      then pure $ Constant computed
       else
         let min = minimum . map (numSigFigs . snd) $ measured
-         in Right . forceSF min $ fromRational computed
+         in pure . forceSF min $ fromRational computed
 evaluate (Exp b e) = do
   res <- evaluate b
   exp <- evaluate e >>= exprNNInt
   case res of
-    (Measured sf bd) -> Right $ forceSF sf (bd ^ exp)
-    (Constant a) -> Right . Constant $ a ^ exp
+    (Measured sf bd) -> pure $ forceSF sf (bd ^ exp)
+    (Constant a) -> pure . Constant $ a ^ exp
 evaluate (Apply Log10 e) = do
   res <- evaluate e
   case res of
@@ -82,7 +82,7 @@ evaluate (Apply Log10 e) = do
         then do
           Left $ "cannot evaluate log(" <> display v <> "), argument is not positive"
         else
-          Right . forceDP (negate sf) . BD.fromString
+          pure . forceDP (negate sf) . BD.fromString
             . printf "%f"
             . logBase (10 :: Float)
             . realToFrac
@@ -96,27 +96,27 @@ evaluate (Apply Antilog10 e) = do
           dp = rightmostSignificantPlace sf bd
        in if
               | dp >= 0 -> Left $ display arg <> " has 0 significant decimal places so exp(" <> display arg <> ") is undefined"
-              | s == 0 -> Right . forceSF (negate dp) $ BigDecimal (10 ^ v) 1
+              | s == 0 -> pure . forceSF (negate dp) $ BigDecimal (10 ^ v) 1
               | bd > 308 -> Left $ "exp(" <> display arg <> ") is too big! sorry"
               | otherwise ->
-                Right . forceSF (negate dp) . BD.fromString
+                pure . forceSF (negate dp) . BD.fromString
                   . printf "%f"
                   $ (10 :: Double) ** realToFrac bd
     (Constant a) -> Left "taking the antilog of a constant is unsupported"
 
 computeUnconstrained :: [(Op, Term)] -> Rational -> Either Text Rational
 computeUnconstrained terms identity =
-  foldl' comb (Right identity) (second extractRat <$> terms)
+  foldl' comb (pure identity) (second extractRat <$> terms)
   where
     comb e (o, a) = e >>= flip (doOp o) a
     extractRat (Measured _ v) = toRational v
     extractRat (Constant v) = v
 
 doOp :: Op -> Rational -> Rational -> Either Text Rational
-doOp Add a b = Right $ a + b
-doOp Sub a b = Right $ a - b
-doOp Mul a b = Right $ a * b
-doOp Div a b = if b == 0 then Left "division by zero error" else Right $ a / b
+doOp Add a b = pure $ a + b
+doOp Sub a b = pure $ a - b
+doOp Mul a b = pure $ a * b
+doOp Div a b = if b == 0 then Left "division by zero error" else pure $ a / b
 
 evaluateSubtrees :: [(a, Expr)] -> Either Text [(a, Term)]
 evaluateSubtrees xs = traverse sequenceA $ second evaluate <$> xs

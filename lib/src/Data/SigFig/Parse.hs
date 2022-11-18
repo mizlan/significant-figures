@@ -53,9 +53,9 @@ toOp _ = error "should be guarded by parser"
 -- | Parse an optional sign preceding a value.
 sign :: Parses Sign
 sign =
-  do char '-'; return Negative
-    <|> do char '+'; return Positive
-    <|> return Positive
+  do char '-'; pure Negative
+    <|> do char '+'; pure Positive
+    <|> pure Positive
 
 signToFunc :: Num a => Sign -> (a -> a)
 signToFunc Positive = id
@@ -84,7 +84,7 @@ integer :: Parses Term
 integer = do
   s <- sign
   digs <- digits
-  return . Measured (numSigFigsNNIntTextual digs) . signToFunc s . BD.fromString . T.unpack $ digs
+  pure . Measured (numSigFigsNNIntTextual digs) . signToFunc s . BD.fromString . T.unpack $ digs
 
 -- | Parse a float which may have a sign.
 float :: Parses Term
@@ -95,37 +95,37 @@ float = do
   rdigs <- option "" digits
   when (T.null ldigs && T.null rdigs) (unexpected "dot without other digits")
   let flt = ldigs <> "." <> rdigs
-  return . Measured (numSigFigsNNFltTextual flt) . signToFunc s . BD.fromString . T.unpack $ flt
+  pure . Measured (numSigFigsNNFltTextual flt) . signToFunc s . BD.fromString . T.unpack $ flt
 
 sciNotation :: Parses Term
 sciNotation = do
   Measured sf coef@(BigDecimal coefValue coefScale) <- try float <|> try integer
   char 'e'
   Measured _ (BigDecimal exp _) <- integer
-  return $ Measured sf $ BD.nf $ coef * 10 ^^ exp
+  pure $ Measured sf $ BD.nf $ coef * 10 ^^ exp
 
 integerConstant :: Parses Term
 integerConstant = do
   Measured _ (BigDecimal v _) <- integer
   char 'c'
-  return . Constant $ v % 1
+  pure . Constant $ v % 1
 
 floatConstant :: Parses Term
 floatConstant = do
   Measured _ (BigDecimal v s) <- float
   char 'c'
-  return . Constant $ v % (10 ^ s)
+  pure . Constant $ v % (10 ^ s)
 
 sciNotationConstant :: Parses Term
 sciNotationConstant = do
   Measured _ (BigDecimal v s) <- sciNotation
   char 'c'
-  return . Constant $ v % (10 ^ s)
+  pure . Constant $ v % (10 ^ s)
 
 literal :: Parses Expr
 literal = do
   l <- choice $ try <$> [sciNotationConstant, floatConstant, integerConstant, sciNotation, float, integer]
-  return $ Literal l
+  pure $ Literal l
 
 factor :: Parses Expr
 factor = do
