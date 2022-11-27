@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               significant-figures
-version:            0.2.0.0
+version:            1.0.0.0
 synopsis:           Calculate expressions involving significant figures.
 description:        This library provides a module "Data.SigFig" that helps with the parsing and evaluation of expressions involving significant figures. Significant figures are a method, often used in chemistry, of assessing and controlling the precision/uncertainty from measured values in calculations.
                     . 
