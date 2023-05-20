@@ -4,8 +4,8 @@
 
 This repository contains:
 * code for the `Data.SigFig` module that contains a variety of functions to
-  parse and evaluate expressions involving significant figures. This will be
-  published to Hackage at some point.
+  parse and evaluate expressions involving significant figures. This is
+  [→ available on Hackage](https://hackage.haskell.org/package/significant-figures)
 * code for a [→ frontend](https://significant-figures.herokuapp.com), along
   with a simple HTTP API
 * code for a minimal CLI using Haskeline ([→ wiki](https://github.com/judah/haskeline/wiki)).
